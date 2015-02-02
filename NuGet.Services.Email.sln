@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Messaging", "src\NuGet.Services.Messaging\NuGet.Services.Messaging.csproj", "{E481A372-EFF4-4831-BF85-B310851969B5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PublishScripts", "PublishScripts", "{E7D18590-D96F-4255-8A1A-9BEC40FC1604}"
+	ProjectSection(SolutionItems) = preProject
+		PublishScripts\AzureWebsitePublishModule.psm1 = PublishScripts\AzureWebsitePublishModule.psm1
+		PublishScripts\Publish-WebApplicationWebsite.ps1 = PublishScripts\Publish-WebApplicationWebsite.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configurations", "Configurations", "{E32ECA9E-5DD4-4437-9603-C46222A43E4C}"
+	ProjectSection(SolutionItems) = preProject
+		PublishScripts\Configurations\NuGetServicesMessaging-WAWS-dev.json = PublishScripts\Configurations\NuGetServicesMessaging-WAWS-dev.json
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E481A372-EFF4-4831-BF85-B310851969B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E481A372-EFF4-4831-BF85-B310851969B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E481A372-EFF4-4831-BF85-B310851969B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E481A372-EFF4-4831-BF85-B310851969B5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E32ECA9E-5DD4-4437-9603-C46222A43E4C} = {E7D18590-D96F-4255-8A1A-9BEC40FC1604}
+	EndGlobalSection
+EndGlobal
