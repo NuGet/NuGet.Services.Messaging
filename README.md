@@ -1,5 +1,5 @@
-NuGet.Services.Email
-====================
+NuGet.Services.Messaging
+========================
 
 NuGet Messaging Service
 
