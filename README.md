@@ -4,66 +4,57 @@ NuGet.Services.Email
 NuGet Messaging Service
 
 
-
 Service Calls - Required Data
 
 
     ContactOwners
     -------------
 
-        moduleID:           string (max 6K char)
-        moduleVersion:      string (semanticVersion)
+        packageId:          string (maxpath)
+        packageVersion:     string (semanticVersion)
         copyMe:             bool
         message:            string (max 4K char)
         fromUsername:       string (current username)
-        brand:              string (options:  NuGet/PowerShell)
+        brand:              string (options:  NuGet/PowerShellGallery)
 
 
     ReportAbuse
     -----------
 
-        moduleID:           string (max 6K char)
-        moduleVersion:      string (semanticVersion)
+        packageId:          string (maxpath)
+        packageVersion:     string (semanticVersion)
         copyMe:             bool
         reason:             string
         message:            string (max 4K char)
         ownersContacted:    bool
         fromUsername:       string (current username)               ***
         fromAddress:        string (email address)                  ***
-        brand:              string (options:  NuGet/PowerShell)
+        brand:              string (options:  NuGet/PowerShellGallery)
 
-        *** One of these must be provided.  Defaults to fromUser.
+        *** One of these must be provided.  Defaults to fromUsername.
 
 
     ContactSupport
     --------------
 
-        moduleID:           string (max 6K char)
-        moduleVersion:      string (semanticVersion)
+        packageId:          string (maxpath)
+        packageVersion:     string (semanticVersion)
         copyMe:             bool
         reason:             string
         message:            string (max 4K char)
         fromUsername:       string (current username)
-        brand:              string (options:  NuGet/PowerShell)
+        brand:              string (options:  NuGet/PowerShellGallery)
 
 
 
-    ConfirmOwnerInvite
+    InvitePackageOwner
     ------------------
     
-        moduleID:           string (max 6K char)
-        moduleVersion:      string (semanticVersion)
+        packageId:          string (maxpath)
+        packageVersion:     string (semanticVersion)
         message:            string (max 4K char)
         toUsername:         string (username)
         fromUsername:       string (current username)
-        brand:              string (options:  NuGet/PowerShell)
-
-
-
-    ConfirmNewUser
-    --------------
-
-        newUserAddress:     string (email address)
-        brand:              string (options:  NuGet/PowerShell)
+        brand:              string (options:  NuGet/PowerShellGallery)
 
 
