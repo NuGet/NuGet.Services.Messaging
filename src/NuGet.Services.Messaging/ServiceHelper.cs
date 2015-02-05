@@ -89,6 +89,31 @@ namespace NuGet.Services.Messaging
 
 
 
+        public static IConstants GetBrandConstants(string brand)
+        {
+            IConstants brandValues;
+            switch (brand)
+            {
+                case "NuGet":
+                    {
+                        brandValues = new NuGet.Services.Messaging.Brand.NuGet.Constants();
+                        break;
+                    }
+                case "PowerShellGallery":
+                    {
+                        brandValues = new NuGet.Services.Messaging.Brand.PowerShellGallery.Constants();
+                        break;
+                    }
+                default:
+                    {
+                        brandValues = new NuGet.Services.Messaging.Brand.NuGet.Constants();
+                        break;
+                    }
+            }
+            return brandValues;
+        }
+
+
         
         public static async Task<List<string>> GetOwnerEmailAddressesFromPackageID(string packageID)
         {
@@ -109,10 +134,20 @@ namespace NuGet.Services.Messaging
 
 
 
+        public static bool SaveEmail(MailMessage email)
+        {
+
+
+
+            return true;
+        }
+
+
 
         /*
         public static async Task<Uri> SaveEmail(Stream email, string name)
         {
+            
             string storagePrimary = System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Primary");
             CloudStorageAccount account = CloudStorageAccount.Parse(storagePrimary);
 
@@ -128,7 +163,7 @@ namespace NuGet.Services.Messaging
 
             return blob.Uri;
         }
-        */
+         */ 
 
 
 

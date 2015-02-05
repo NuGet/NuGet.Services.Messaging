@@ -33,13 +33,6 @@ namespace NuGet.Services.Messaging
         /// <returns></returns>
         public static async Task ContactOwners(IOwinContext context)
         {
-            //TODO: add authorization
-
-            // just shows how to return a message.  
-            await context.Response.WriteAsync("ContactOwners OK");
-
-
-            // read posted json file
             StreamReader reader = new StreamReader(context.Request.Body);
             string bodyContent = reader.ReadToEnd();
             JObject root = JObject.Parse(bodyContent);
@@ -55,56 +48,53 @@ namespace NuGet.Services.Messaging
             string message = root.Value<string>("message");
             string fromUsername = root.Value<string>("fromUsername");
             string brand = root.Value<string>("brand");
+
+            IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
             
-            
-            //  gather data
-            
+
+            List<string> ownersAddressesList = await ServiceHelper.GetOwnerEmailAddressesFromPackageID(packageId);
+            string ownersAddresses = string.Join(",", ownersAddressesList.ToArray()); 
+
             //================================================================
 
-            
-            // is this on the group, or on the owner themself?  Get from AAD?
+            // TODO
+            // Get from AAD (somewhere)
             bool contactAllowed = true; 
 
             //==============================================================
 
             if (!contactAllowed)
             {
-                // TODO:  do something different
-                throw new Exception("Owner does not want to be contacted.");
+                await context.Response.WriteAsync("ContactOwners FAIL: ContactNotAllowed");
+                //context.Response.StatusCode = (int)HttpStatusCode.OK;
+                // TODO:  verify returned message protocol
+                return;
             }
 
-
-
-            List<string> ownersAddressesList = await ServiceHelper.GetOwnerEmailAddressesFromPackageID(packageId);
-            string ownersAddresses = string.Join(",", ownersAddressesList.ToArray()); 
             string fromUserAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
-
-            string subject = String.Format(CultureInfo.CurrentCulture, Constants.ContactOwners_EmailSubject, brand, packageId);
+            
+            
+            //  compose email
+            string subject = String.Format(CultureInfo.CurrentCulture, brandValues.ContactOwners_EmailSubject, packageId);
             string bodyText = String.Format(
                 CultureInfo.CurrentCulture,
-                Constants.ContactOwners_EmailBody_Text, 
+                brandValues.ContactOwners_EmailBody_Text, 
                 fromUsername,
                 fromUserAddress, 
                 packageId, 
                 message, 
-                brand,
-                Constants.ChangeEmailNotificationsURL);
+                brandValues.ChangeEmailNotificationsURL);
+
             string bodyHTML = String.Format(
                 CultureInfo.CurrentCulture,
-                Constants.ContactOwners_EmailBody_HTML,
+                brandValues.ContactOwners_EmailBody_HTML,
                 fromUsername,
                 fromUserAddress,
                 packageId,
                 message,
-                brand,
-                Constants.ChangeEmailNotificationsURL);
+                brandValues.ChangeEmailNotificationsURL);
 
 
-
-
-
-            //  compose email
-            
             MailMessage email = new MailMessage();
             email.From = new MailAddress(fromUserAddress);
             email.To.Add(ownersAddresses);
@@ -128,12 +118,23 @@ namespace NuGet.Services.Messaging
 
             // Use Azure Storage Blob
             
-            //ServiceHelper.SaveEmail(email as Stream, ??);
+            bool result = ServiceHelper.SaveEmail(email);
 
             //====================================
             
+            if (result)
+            {
+                await context.Response.WriteAsync("ContactOwners OK");
+                context.Response.StatusCode = (int)HttpStatusCode.OK;
+                return;
+            }
+            else
+            {
+                await context.Response.WriteAsync("ContactOwners FAIL: EmailNotSent");
+                context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                return;
+            }
 
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
         }
 
 
@@ -145,13 +146,6 @@ namespace NuGet.Services.Messaging
         /// <returns></returns>
         public static async Task ReportAbuse(IOwinContext context)
         {
-            //TODO: add authorization
-
-            //TODO: grab data from context and spool into folder/storage
-
-            await context.Response.WriteAsync("ReportAbuse OK");
-
-            // read posted file
             StreamReader reader = new StreamReader(context.Request.Body);
             string bodyContent = reader.ReadToEnd();
             JObject root = JObject.Parse(bodyContent);
@@ -173,22 +167,24 @@ namespace NuGet.Services.Messaging
 
             if (String.IsNullOrEmpty(fromUsername) && String.IsNullOrEmpty(fromAddress))
             {
-                // TODO:  do this better
-                throw new Exception("Both fromUsername and fromAddress cannot be null.");
+                await context.Response.WriteAsync("ReportAbuse FAIL: Insufficient parameters.");
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                // TODO:  use better status code
+                return;
             }
 
             if (!ownersContacted)
             {
-                // We should never get here, but just in case
-                // TODO:  do this better
-                throw new Exception("Try contacting owners first.");
+                await context.Response.WriteAsync("ReportAbuse FAIL: Try ContactOwners first.");
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                // TODO:  use better status code
+                return;
+                
             }
             
+            IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
 
-
-            // gather data 
-            
-            string packageURL = Constants.NuGetURL + "/packages/" + packageId;
+            string packageURL = brandValues.SiteRoot + "/packages/" + packageId;
             string versionURL = packageURL + "/" + packageVersion;
 
             if (String.IsNullOrEmpty(fromAddress))
@@ -198,11 +194,11 @@ namespace NuGet.Services.Messaging
 
 
 
-
-            string subject = String.Format(CultureInfo.CurrentCulture, Constants.ReportAbuse_EmailSubject, brand, packageId, packageVersion, reason);
+            // compose message
+            string subject = String.Format(CultureInfo.CurrentCulture, brandValues.ReportAbuse_EmailSubject, packageId, packageVersion, reason);
             string bodyText = String.Format(
                 CultureInfo.CurrentCulture,
-                Constants.ReportAbuse_EmailBody_Text,
+                brandValues.ReportAbuse_EmailBody_Text,
                 fromUsername,
                 fromAddress,
                 packageId,
@@ -214,7 +210,7 @@ namespace NuGet.Services.Messaging
                 message);
             string bodyHTML = String.Format(
                 CultureInfo.CurrentCulture,
-                Constants.ReportAbuse_EmailBody_HTML,
+                brandValues.ReportAbuse_EmailBody_HTML,
                 fromUsername,
                 fromAddress,
                 packageId,
@@ -226,13 +222,9 @@ namespace NuGet.Services.Messaging
                 message);
 
 
-
-
-            //  compose message
-
             MailMessage email = new MailMessage();
             email.From = new MailAddress(fromAddress);
-            email.To.Add(Constants.SupportTeamEmail);
+            email.To.Add(brandValues.SupportTeamEmail);
             if (copyMe)
             {
                 email.CC.Add(fromAddress);
@@ -253,9 +245,22 @@ namespace NuGet.Services.Messaging
 
             // Use Azure Storage Blob
 
+            bool result = ServiceHelper.SaveEmail(email);
+
             //====================================
 
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
+            if (result)
+            {
+                await context.Response.WriteAsync("ReportAbuse OK");
+                context.Response.StatusCode = (int)HttpStatusCode.OK;
+                return;
+            }
+            else
+            {
+                await context.Response.WriteAsync("ReportAbuse FAIL: EmailNotSent");
+                context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                return;
+            }
         }
 
         /// <summary>
@@ -266,11 +271,6 @@ namespace NuGet.Services.Messaging
         /// <returns></returns>
         public static async Task ContactSupport(IOwinContext context)
         {
-            //TODO: add authorization
-
-            await context.Response.WriteAsync("ContactSupport OK");
-
-            // read posted file
             StreamReader reader = new StreamReader(context.Request.Body);
             string bodyContent = reader.ReadToEnd();
             JObject root = JObject.Parse(bodyContent);
@@ -288,19 +288,21 @@ namespace NuGet.Services.Messaging
             string fromUsername = root.Value<string>("fromUsername");
             string brand = root.Value<string>("brand");
 
+            IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
 
-
-            // gather data 
-            string packageURL = Constants.NuGetURL + "/packages/" + packageId;
+ 
+            string packageURL = brandValues.SiteRoot + "/packages/" + packageId;
             string versionURL = packageURL + "/" + packageVersion;
 
             string fromAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
             
 
-            string subject = String.Format(CultureInfo.CurrentCulture, Constants.ContactSupport_EmailSubject, brand, packageId, packageVersion, reason);
+
+            //  compose message
+            string subject = String.Format(CultureInfo.CurrentCulture, brandValues.ContactSupport_EmailSubject, packageId, packageVersion, reason);
             string bodyText = String.Format(
                 CultureInfo.CurrentCulture,
-                Constants.ContactSupport_EmailBody_Text,
+                brandValues.ContactSupport_EmailBody_Text,
                 fromUsername,
                 fromAddress,
                 packageId,
@@ -311,7 +313,7 @@ namespace NuGet.Services.Messaging
                 message);
             string bodyHTML = String.Format(
                 CultureInfo.CurrentCulture,
-                Constants.ContactSupport_EmailBody_HTML,
+                brandValues.ContactSupport_EmailBody_HTML,
                 fromUsername,
                 fromAddress,
                 packageId,
@@ -322,13 +324,9 @@ namespace NuGet.Services.Messaging
                 message);
 
 
-
-
-            //  compose message
-
             MailMessage email = new MailMessage();
             email.From = new MailAddress(fromAddress);
-            email.To.Add(Constants.SupportTeamEmail);
+            email.To.Add(brandValues.SupportTeamEmail);
             if (copyMe)
             {
                 email.CC.Add(fromAddress);
@@ -342,16 +340,27 @@ namespace NuGet.Services.Messaging
 
 
 
-
-
             //===================================
             // TODO:  enqueue message
 
             // Use Azure Storage Blob
 
+            bool result = ServiceHelper.SaveEmail(email);
+
             //====================================
 
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
+            if (result)
+            {
+                await context.Response.WriteAsync("ContactSupport OK");
+                context.Response.StatusCode = (int)HttpStatusCode.OK;
+                return;
+            }
+            else
+            {
+                await context.Response.WriteAsync("ContactSupport FAIL: EmailNotSent");
+                context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                return;
+            }
         }
 
 
@@ -363,11 +372,6 @@ namespace NuGet.Services.Messaging
         /// <returns></returns>
         public static async Task InvitePackageOwner(IOwinContext context)
         {
-            //TODO: add authorization
-
-            await context.Response.WriteAsync("ConfirmOwnerInvite OK");
-
-            // read posted file
             StreamReader reader = new StreamReader(context.Request.Body);
             string bodyContent = reader.ReadToEnd();
             JObject root = JObject.Parse(bodyContent);
@@ -384,36 +388,27 @@ namespace NuGet.Services.Messaging
             string fromUsername = root.Value<string>("fromUsername");
             string brand = root.Value<string>("brand");
 
-
-
-            // gather data 
-            string toAddress = await ServiceHelper.GetUserEmailAddressFromUsername(toUsername);
-            string fromAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
-
-
-
-            string subject = String.Format(CultureInfo.CurrentCulture, Constants.ConfirmOwnerInvite_EmailSubject, brand, fromUsername, packageId);
-            string bodyText = String.Format(
-                CultureInfo.CurrentCulture,
-                Constants.ConfirmOwnerInvite_EmailBody_Text,
-                fromUsername,
-                packageId,
-                brand,
-                Constants.ConfirmOwnershipURL, 
-                brand);
-            string bodyHTML = String.Format(
-                CultureInfo.CurrentCulture,
-                Constants.ConfirmOwnerInvite_EmailBody_HTML,
-                fromUsername,
-                packageId,
-                brand,
-                Constants.ConfirmOwnershipURL,
-                brand);
-
-
+            IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
 
 
             //  compose message
+            string toAddress = await ServiceHelper.GetUserEmailAddressFromUsername(toUsername);
+            string fromAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
+
+            string subject = String.Format(CultureInfo.CurrentCulture, brandValues.InvitePackageOwner_EmailSubject, fromUsername, packageId);
+            string bodyText = String.Format(
+                CultureInfo.CurrentCulture,
+                brandValues.InvitePackageOwner_EmailBody_Text,
+                fromUsername,
+                packageId,
+                brandValues.ConfirmPackageOwnershipInviteURL);
+            string bodyHTML = String.Format(
+                CultureInfo.CurrentCulture,
+                brandValues.InvitePackageOwner_EmailBody_HTML,
+                fromUsername,
+                packageId,
+                brandValues.ConfirmPackageOwnershipInviteURL);
+
 
             MailMessage email = new MailMessage();
             email.From = new MailAddress(fromAddress);
@@ -427,16 +422,27 @@ namespace NuGet.Services.Messaging
 
 
 
-
-
             //===================================
             // TODO:  enqueue message
 
             // Use Azure Storage Blob
 
+            bool result = ServiceHelper.SaveEmail(email);
+
             //====================================
 
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
+            if (result)
+            {
+                await context.Response.WriteAsync("InvitePackageOwner OK");
+                context.Response.StatusCode = (int)HttpStatusCode.OK;
+                return;
+            }
+            else
+            {
+                await context.Response.WriteAsync("InvitePackageOwner FAIL: EmailNotSent");
+                context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                return;
+            }
         }
         
     }
