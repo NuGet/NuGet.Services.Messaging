@@ -80,6 +80,12 @@ namespace NuGet.Services.Messaging
                         await ServiceImpl.ContactSupport(context);
                         break;
                     }
+
+                case "/invitepackageowner":
+                    {
+                        await ServiceImpl.InvitePackageOwner(context);
+                        break;
+                    }
                 default:
                     {
                         await context.Response.WriteAsync("NotFound");
