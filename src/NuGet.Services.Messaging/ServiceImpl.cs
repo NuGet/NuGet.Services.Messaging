@@ -293,7 +293,6 @@ namespace NuGet.Services.Messaging
  
             string packageURL = brandValues.SiteRoot + "/packages/" + packageId;
             string versionURL = packageURL + "/" + packageVersion;
-
             string fromAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
             
 
@@ -444,6 +443,61 @@ namespace NuGet.Services.Messaging
                 return;
             }
         }
+
+
+        public static Task ContactSupportReasons(IOwinContext context, string brand)
+        {
+            IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
+            String[] reasons = {
+                "The {0} contains private/confidential data",
+                "The {0} was published as the wrong version",
+                "The {0} was not intended to be published publically on this gallery",
+                "The {0} contains malicious code",
+                "Other" };
+
+            // replace entity with brand's entity name
+            for (int i = 0; i < reasons.Length-1; i++ )
+            {
+                reasons[i] = String.Format(CultureInfo.CurrentCulture, reasons[i], brandValues.EntityName);
+            }
+
+            // format as JSON
+            JObject reasonsJSON = new JObject();
+            reasonsJSON.Add("reasons", new JArray(reasons));
+            
+            // return response with body containing JSON
+            context.Response.StatusCode = (int)HttpStatusCode.OK;
+            context.Response.ContentType = "application/json";
+            context.Response.Headers.Add("Cache-Control", new string[] { "no-cache" });
+            return context.Response.WriteAsync(reasonsJSON.ToString());
+        }
         
+
+        public static Task ReportAbuseReasons(IOwinContext context, string brand)
+        {
+            IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
+            String[] reasons = {
+                "The {0} owner is fraudulently claiming authorship",
+                "The {0} violates a license I own",
+                "The {0} contains malicious code",
+                "The {0} has a bug/failed to install",
+                "Other" };
+
+            // replace entity with brand's entity name
+            for (int i = 0; i < reasons.Length - 1; i++)
+            {
+                reasons[i] = String.Format(CultureInfo.CurrentCulture, reasons[i], brandValues.EntityName);
+            }
+
+            // format as JSON
+            JObject reasonsJSON = new JObject();
+            reasonsJSON.Add("reasons", new JArray(reasons));
+
+            // return response with body containing JSON
+            context.Response.StatusCode = (int)HttpStatusCode.OK;
+            context.Response.ContentType = "application/json";
+            context.Response.Headers.Add("Cache-Control", new string[] { "no-cache" });
+            return context.Response.WriteAsync(reasonsJSON.ToString());
+        }
     }
 }

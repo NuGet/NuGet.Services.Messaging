@@ -52,6 +52,26 @@ namespace NuGet.Services.Messaging
                         context.Response.StatusCode = (int)HttpStatusCode.OK;
                         break;
                     }
+                case "/reasons/contactSupport/NuGet":
+                    { 
+                        await ServiceImpl.ContactSupportReasons(context, "NuGet");
+                        break;
+                    }
+                case "/reasons/contactSupport/PowerShellGallery":
+                    {
+                        await ServiceImpl.ContactSupportReasons(context, "PowerShellGallery");
+                        break;
+                    }
+                case "/reasons/reportAbuse/NuGet":
+                    { 
+                        await ServiceImpl.ReportAbuseReasons(context, "NuGet");
+                        break;
+                    }
+                case "/reasons/reportAbuse/PowerShellGallery":
+                    {
+                        await ServiceImpl.ReportAbuseReasons(context, "PowerShellGallery");
+                        break;
+                    }
                 default:
                     {
                         await context.Response.WriteAsync("NotFound");
@@ -65,23 +85,23 @@ namespace NuGet.Services.Messaging
         {
             switch (context.Request.Path.Value)
             {
-                case "/contactowners":
+                case "/contactOwners":
                     {
                         await ServiceImpl.ContactOwners(context);
                         break;
                     }
-                case "/reportabuse":
+                case "/reportAbuse":
                     {
                         await ServiceImpl.ReportAbuse(context);
                         break;
                     }
-                case "/contactsupport":
+                case "/contactSupport":
                     {
                         await ServiceImpl.ContactSupport(context);
                         break;
                     }
 
-                case "/invitepackageowner":
+                case "/invitePackageOwner":
                     {
                         await ServiceImpl.InvitePackageOwner(context);
                         break;
