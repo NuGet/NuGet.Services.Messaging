@@ -11,6 +11,7 @@ namespace NuGet.Services.Messaging
 {
     public class Startup
     {
+
         public void Configuration(IAppBuilder app)
         {
             app.UseErrorPage();
@@ -24,6 +25,8 @@ namespace NuGet.Services.Messaging
 
             app.Run(Invoke);
         }
+
+
 
         async Task Invoke(IOwinContext context)
         {
@@ -54,22 +57,22 @@ namespace NuGet.Services.Messaging
                     }
                 case "/reasons/contactSupport/NuGet":
                     { 
-                        await ServiceImpl.ContactSupportReasons(context, "NuGet");
+                        await ServiceImpl.GetReasons(context, "NuGet", "contactSupport");
                         break;
                     }
                 case "/reasons/contactSupport/PowerShellGallery":
                     {
-                        await ServiceImpl.ContactSupportReasons(context, "PowerShellGallery");
+                        await ServiceImpl.GetReasons(context, "PowerShellGallery", "contactSupport");
                         break;
                     }
                 case "/reasons/reportAbuse/NuGet":
-                    { 
-                        await ServiceImpl.ReportAbuseReasons(context, "NuGet");
+                    {
+                        await ServiceImpl.GetReasons(context, "NuGet", "reportAbuse");
                         break;
                     }
                 case "/reasons/reportAbuse/PowerShellGallery":
                     {
-                        await ServiceImpl.ReportAbuseReasons(context, "PowerShellGallery");
+                        await ServiceImpl.GetReasons(context, "PowerShellGallery", "reportAbuse");
                         break;
                     }
                 default:

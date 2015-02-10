@@ -1,22 +1,14 @@
 ﻿using Microsoft.Azure.ActiveDirectory.GraphClient;
+using Microsoft.Azure.ActiveDirectory.GraphClient.Extensions;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
-
 using Microsoft.Owin;
-//using Microsoft.WindowsAzure.Storage;
-//using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
 using System.Net;
-using System.Net.Mail;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using System.Web;
-using System.Xml.Linq;
 
 
 namespace NuGet.Services.Messaging
@@ -31,9 +23,16 @@ namespace NuGet.Services.Messaging
         static string tenant = ConfigurationManager.AppSettings["ida:Tenant"];
 
 
-
+        // needed??
         public static async Task Test(IOwinContext context)
         {
+            
+            // and the AAD user id ...
+
+            //  Claim userClaim = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier");
+            //  string userId = (userClaim != null) ? userClaim.Value : string.Empty;
+            
+
             //
             // The Scope claim tells you what permissions the client application has in the service.
             // In this case we look for a scope value of user_impersonation, or full access to the service as the user.
@@ -56,10 +55,11 @@ namespace NuGet.Services.Messaging
         }
 
 
-
         
         public static async Task<ActiveDirectoryClient> GetActiveDirectoryClient()
         {
+            // Taken from NuGet.Services.Publish.ServiceHelpers.cs
+            
             string authority = string.Format(aadInstance, tenant);
 
             AuthenticationContext authContext = new AuthenticationContext(authority);
@@ -77,16 +77,37 @@ namespace NuGet.Services.Messaging
         }
 
 
-
-
         public static async Task<string> GetUserEmailAddressFromUsername(string username)
         {
             ActiveDirectoryClient activeDirectoryClient = await GetActiveDirectoryClient();
             IUser user = await activeDirectoryClient.Users.GetByObjectId(username).ExecuteAsync();
-            string emailAddress = user.Mail;
+            string emailAddress = user.Mail;  // assuming email is stored in mail
             return emailAddress;
         }
 
+        
+        public static async Task<List<string>> GetOwnerEmailAddressesFromPackageID(string packageID)
+        {
+            ActiveDirectoryClient activeDirectoryClient = await GetActiveDirectoryClient();
+            IGroup package = await activeDirectoryClient.Groups.GetByObjectId(packageID).ExecuteAsync();
+            IPagedCollection<IDirectoryObject> owners = package.Owners;
+
+            //owners.CurrentPage
+            
+
+            List<string> ownerEmails = new List<string>();
+
+            // for each owner, call GetUserEmailAddressFromUsername(ownerUsername)
+            
+            // store each email in a list
+            
+
+
+           
+
+            return new List<string> { "user1@gmail.com", "user2@gmail.com", "user3@gmail.com" };
+
+        }
 
 
         public static IConstants GetBrandConstants(string brand)
@@ -114,28 +135,65 @@ namespace NuGet.Services.Messaging
         }
 
 
-        
-        public static async Task<List<string>> GetOwnerEmailAddressesFromPackageID(string packageID)
+        public static String[] GetReasonsList(string action)
         {
-            ActiveDirectoryClient activeDirectoryClient = await GetActiveDirectoryClient();
-
-            IGroup package = await activeDirectoryClient.Groups.GetByObjectId(packageID).ExecuteAsync();
-
-
-            // TODO:  Pull owners using module name
-
-
-            //IUserCollection owners = activeDirectoryClient.Users.Where(usr => usr.MemberOf(package.Owners) );
-            //package.Owners;
-
-            return new List<string> { "user1@gmail.com", "user2@gmail.com", "user3@gmail.com" };
-
+            switch (action)
+            {
+                case "contactSupport":
+                    {
+                        String[] reasons = {
+                            "The {0} contains private/confidential data",
+                            "The {0} was published as the wrong version",
+                            "The {0} was not intended to be published publically on this gallery",
+                            "The {0} contains malicious code",
+                            "Other" };
+                        return reasons;
+                    }
+                case "reportAbuse":
+                    {
+                        String[] reasons = {
+                            "The {0} owner is fraudulently claiming authorship",
+                            "The {0} violates a license I own",
+                            "The {0} contains malicious code",
+                            "The {0} has a bug/failed to install",
+                            "Other" };
+                        return reasons;
+                    }
+                default:
+                    {
+                        String[] reasons = { "Other" };
+                        return reasons;
+                    }
+            }
+            
         }
 
 
-
-        public static bool SaveEmail(MailMessage email)
+        public static List<string> VerifyRequiredParameters(JObject root, String[] requiredParams)
         {
+            List<string> missingParams = new List<string>();
+
+            for (int i = 0; i < requiredParams.Length; i++)
+            {
+                if (root[requiredParams[i]] == null)
+                {
+                    missingParams.Add(requiredParams[i]);
+                }
+            }
+            return missingParams;
+        }
+
+
+        public static bool SaveMessage(JObject message)
+        {
+            // get storage
+
+            
+            
+            
+            // so some saving
+            // get storage
+            // call storage.save()
 
 
 
@@ -143,11 +201,37 @@ namespace NuGet.Services.Messaging
         }
 
 
-
         /*
+         * Taken from NuGet.Services.Publish.PublishImpl.cs > SaveNupkg()
         public static async Task<Uri> SaveEmail(Stream email, string name)
         {
             
+         * string storagePrimary = System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Primary");
+            string storageContainerEmails = System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Container.Emails") ?? "emails";
+
+            CloudStorageAccount account = CloudStorageAccount.Parse(storagePrimary);
+
+            CloudBlobClient client = account.CreateCloudBlobClient();
+            CloudBlobContainer container = client.GetContainerReference(storageContainerEmails);
+            if (await container.CreateIfNotExistsAsync())
+            {
+                //TODO: good for testing not so great for multi-tenant
+                container.SetPermissions(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
+            }
+
+            CloudBlockBlob blob = container.GetBlockBlobReference(name);
+            blob.Properties.ContentType = "application/json";
+            //blob.Properties.ContentDisposition = name;
+
+            email.Seek(0, SeekOrigin.Begin);
+            await blob.UploadFromStreamAsync(email);
+
+            return blob.Uri;
+         * 
+         * 
+         * 
+         * 
+         * 
             string storagePrimary = System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Primary");
             CloudStorageAccount account = CloudStorageAccount.Parse(storagePrimary);
 
@@ -156,16 +240,14 @@ namespace NuGet.Services.Messaging
             await container.CreateIfNotExistsAsync();
 
             CloudBlockBlob blob = container.GetBlockBlobReference(name);
-            blob.Properties.ContentType = "application/octet-stream";  // email/mailmessage?
+            blob.Properties.ContentType = "application/octet-stream";  
             blob.Properties.ContentDisposition = name;
             email.Seek(0, SeekOrigin.Begin);
             await blob.UploadFromStreamAsync(email);
 
             return blob.Uri;
         }
-         */ 
-
-
+         */
 
 
 

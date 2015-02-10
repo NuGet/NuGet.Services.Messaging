@@ -6,22 +6,10 @@ using Newtonsoft.Json.Linq;
 using System.IO;
 using System.Globalization;
 using System.Collections.Generic;
-using System.Net.Mail;
-using Microsoft.Azure.ActiveDirectory.GraphClient;
-using Microsoft.Azure.ActiveDirectory.GraphClient.Extensions;
 
 namespace NuGet.Services.Messaging
 {
-    // authorization looks like this:
-
-    //  Claim scopeClaim = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope");
-    //  bool authorized = (scopeClaim != null && scopeClaim.Value == "user_impersonation");
-
-    // and the AAD user id ...
-
-    //  Claim userClaim = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier");
-    //  string userId = (userClaim != null) ? userClaim.Value : string.Empty;
-
+    
     public static class ServiceImpl
     {
 
@@ -38,7 +26,18 @@ namespace NuGet.Services.Messaging
             JObject root = JObject.Parse(bodyContent);
             
 
-            //TODO: verify required fields
+            // verify parameters
+            String[] requiredParams = { "packageID", "packageVersion", "copyMe", "message", "fromUsername", "brand" };
+            List<string> missingParams = ServiceHelper.VerifyRequiredParameters(root, requiredParams);
+            if (missingParams.Count > 0)
+            {
+                JObject errorObject = new JObject();
+                errorObject.Add("Error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("Description", "ContactOwners FAIL: Insufficient parameters.  Missing: " + missingParams.ToString());
+                //context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(errorObject.ToString());
+                return;
+            }
 
 
             // pull data
@@ -49,6 +48,7 @@ namespace NuGet.Services.Messaging
             string fromUsername = root.Value<string>("fromUsername");
             string brand = root.Value<string>("brand");
 
+
             IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
             
 
@@ -57,17 +57,15 @@ namespace NuGet.Services.Messaging
 
             //================================================================
 
-            // TODO
-            // Get from AAD (somewhere)
+            // TODO: Get from AAD (somewhere)
             bool contactAllowed = true; 
 
             //==============================================================
 
             if (!contactAllowed)
             {
-                await context.Response.WriteAsync("ContactOwners FAIL: ContactNotAllowed");
-                //context.Response.StatusCode = (int)HttpStatusCode.OK;
-                // TODO:  verify returned message protocol
+                await context.Response.WriteAsync("ContactOwners FAIL: Contact owners not allowed.");
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return;
             }
 
@@ -95,32 +93,26 @@ namespace NuGet.Services.Messaging
                 brandValues.ChangeEmailNotificationsURL);
 
 
-            MailMessage email = new MailMessage();
-            email.From = new MailAddress(fromUserAddress);
-            email.To.Add(ownersAddresses);
+
+            // compose JSON
+            JObject emailJSON = new JObject();
+            emailJSON.Add("to", ownersAddresses);
+            emailJSON.Add("from", fromUserAddress);
             if (copyMe)
             {
-                email.CC.Add(fromUserAddress);
+                emailJSON.Add("cc",fromUserAddress);
             }
-            email.Subject = subject;
+            emailJSON.Add("subject", subject);
+            JObject body = new JObject();
+            body.Add("text", bodyText);
+            body.Add("html", bodyHTML);
+            emailJSON.Add("body", body);
 
-            AlternateView plainMessage = AlternateView.CreateAlternateViewFromString(bodyText, null, "text/plain");
-            AlternateView htmlMessage = AlternateView.CreateAlternateViewFromString(bodyHTML, null, "text/html");
-            email.AlternateViews.Add(plainMessage);
-            email.AlternateViews.Add(htmlMessage);
 
+
+            // enqueue message
+            bool result = ServiceHelper.SaveMessage(emailJSON);
             
-            
-
-           
-            //===================================
-            // TODO:  enqueue message
-
-            // Use Azure Storage Blob
-            
-            bool result = ServiceHelper.SaveEmail(email);
-
-            //====================================
             
             if (result)
             {
@@ -151,7 +143,17 @@ namespace NuGet.Services.Messaging
             JObject root = JObject.Parse(bodyContent);
 
 
-            //TODO: verify required fields
+            // verify parameters
+            String[] requiredParams = { "packageID", "packageVersion", "copyMe", "reason", "message", "ownersContacted", "fromUsername", "fromAddress", "brand" };
+            List<string> missingParams = ServiceHelper.VerifyRequiredParameters(root, requiredParams);
+            if (missingParams.Count > 0)
+            {
+                JObject errorObject = new JObject();
+                errorObject.Add("Error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("Description", "ReportAbuse FAIL: Insufficient parameters.  Missing: " + missingParams.ToString());
+                await context.Response.WriteAsync(errorObject.ToString());
+                return;
+            }
 
 
             // pull data
@@ -167,9 +169,8 @@ namespace NuGet.Services.Messaging
 
             if (String.IsNullOrEmpty(fromUsername) && String.IsNullOrEmpty(fromAddress))
             {
-                await context.Response.WriteAsync("ReportAbuse FAIL: Insufficient parameters.");
+                await context.Response.WriteAsync("ReportAbuse FAIL: Insufficient parameters.  Need either fromUsername or fromAddress.");
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                // TODO:  use better status code
                 return;
             }
 
@@ -177,7 +178,6 @@ namespace NuGet.Services.Messaging
             {
                 await context.Response.WriteAsync("ReportAbuse FAIL: Try ContactOwners first.");
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                // TODO:  use better status code
                 return;
                 
             }
@@ -193,9 +193,12 @@ namespace NuGet.Services.Messaging
             }
 
 
-
-            // compose message
-            string subject = String.Format(CultureInfo.CurrentCulture, brandValues.ReportAbuse_EmailSubject, packageId, packageVersion, reason);
+            string subject = String.Format(
+                CultureInfo.CurrentCulture, 
+                brandValues.ReportAbuse_EmailSubject, 
+                packageId, 
+                packageVersion, 
+                reason);
             string bodyText = String.Format(
                 CultureInfo.CurrentCulture,
                 brandValues.ReportAbuse_EmailBody_Text,
@@ -222,32 +225,24 @@ namespace NuGet.Services.Messaging
                 message);
 
 
-            MailMessage email = new MailMessage();
-            email.From = new MailAddress(fromAddress);
-            email.To.Add(brandValues.SupportTeamEmail);
+            // compose JSON
+            JObject emailJSON = new JObject();
+            emailJSON.Add("to", brandValues.SupportTeamEmail);
+            emailJSON.Add("from", fromAddress);
             if (copyMe)
             {
-                email.CC.Add(fromAddress);
+                emailJSON.Add("cc", fromAddress);
             }
-            email.Subject = subject;
-
-            AlternateView plainMessage = AlternateView.CreateAlternateViewFromString(bodyText, null, "text/plain");
-            AlternateView htmlMessage = AlternateView.CreateAlternateViewFromString(bodyHTML, null, "text/html");
-            email.AlternateViews.Add(plainMessage);
-            email.AlternateViews.Add(htmlMessage);
-
+            emailJSON.Add("subject", subject);
+            JObject body = new JObject();
+            body.Add("text", bodyText);
+            body.Add("html", bodyHTML);
+            emailJSON.Add("body", body);
 
 
 
-
-            //===================================
-            // TODO:  enqueue message
-
-            // Use Azure Storage Blob
-
-            bool result = ServiceHelper.SaveEmail(email);
-
-            //====================================
+            // enqueue message
+            bool result = ServiceHelper.SaveMessage(emailJSON);
 
             if (result)
             {
@@ -276,7 +271,17 @@ namespace NuGet.Services.Messaging
             JObject root = JObject.Parse(bodyContent);
 
 
-            //TODO: verify required fields
+            // verify parameters
+            String[] requiredParams = { "packageID", "packageVersion", "copyMe", "reason", "message", "fromUsername", "brand" };
+            List<string> missingParams = ServiceHelper.VerifyRequiredParameters(root, requiredParams);
+            if (missingParams.Count > 0)
+            {
+                JObject errorObject = new JObject();
+                errorObject.Add("Error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("Description", "ContactSupport FAIL: Insufficient parameters.  Missing: " + missingParams.ToString());
+                await context.Response.WriteAsync(errorObject.ToString());
+                return;
+            }
 
 
             // pull data
@@ -288,17 +293,21 @@ namespace NuGet.Services.Messaging
             string fromUsername = root.Value<string>("fromUsername");
             string brand = root.Value<string>("brand");
 
+
             IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
 
  
             string packageURL = brandValues.SiteRoot + "/packages/" + packageId;
             string versionURL = packageURL + "/" + packageVersion;
             string fromAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
+
             
-
-
-            //  compose message
-            string subject = String.Format(CultureInfo.CurrentCulture, brandValues.ContactSupport_EmailSubject, packageId, packageVersion, reason);
+            string subject = String.Format(
+                CultureInfo.CurrentCulture, 
+                brandValues.ContactSupport_EmailSubject, 
+                packageId, 
+                packageVersion, 
+                reason);
             string bodyText = String.Format(
                 CultureInfo.CurrentCulture,
                 brandValues.ContactSupport_EmailBody_Text,
@@ -323,30 +332,26 @@ namespace NuGet.Services.Messaging
                 message);
 
 
-            MailMessage email = new MailMessage();
-            email.From = new MailAddress(fromAddress);
-            email.To.Add(brandValues.SupportTeamEmail);
+
+
+            // compose JSON
+            JObject emailJSON = new JObject();
+            emailJSON.Add("to", brandValues.SupportTeamEmail);
+            emailJSON.Add("from", fromAddress);
             if (copyMe)
             {
-                email.CC.Add(fromAddress);
+                emailJSON.Add("cc", fromAddress);
             }
-            email.Subject = subject;
-
-            AlternateView plainMessage = AlternateView.CreateAlternateViewFromString(bodyText, null, "text/plain");
-            AlternateView htmlMessage = AlternateView.CreateAlternateViewFromString(bodyHTML, null, "text/html");
-            email.AlternateViews.Add(plainMessage);
-            email.AlternateViews.Add(htmlMessage);
-
+            emailJSON.Add("subject", subject);
+            JObject body = new JObject();
+            body.Add("text", bodyText);
+            body.Add("html", bodyHTML);
+            emailJSON.Add("body", body);
 
 
-            //===================================
-            // TODO:  enqueue message
-
-            // Use Azure Storage Blob
-
-            bool result = ServiceHelper.SaveEmail(email);
-
-            //====================================
+            
+            // enqueue message
+            bool result = ServiceHelper.SaveMessage(emailJSON);
 
             if (result)
             {
@@ -362,7 +367,6 @@ namespace NuGet.Services.Messaging
             }
         }
 
-
         /// <summary>
         /// Creates and formats ConfirmOwnerInvite email, and stores it in an Azure Storage Blob.
         /// Uses an AAD connection to obtain required information.
@@ -376,7 +380,17 @@ namespace NuGet.Services.Messaging
             JObject root = JObject.Parse(bodyContent);
 
 
-            //TODO: verify required fields
+            // verify parameters
+            String[] requiredParams = { "packageID", "packageVersion", "message", "toUsername", "fromUsername", "brand" };
+            List<string> missingParams = ServiceHelper.VerifyRequiredParameters(root, requiredParams);
+            if (missingParams.Count > 0)
+            {
+                JObject errorObject = new JObject();
+                errorObject.Add("Error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("Description", "InvitePackageOwner FAIL: Insufficient parameters.  Missing: " + missingParams.ToString());
+                await context.Response.WriteAsync(errorObject.ToString());
+                return;
+            }
 
 
             // pull data
@@ -389,12 +403,14 @@ namespace NuGet.Services.Messaging
 
             IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
 
-
-            //  compose message
             string toAddress = await ServiceHelper.GetUserEmailAddressFromUsername(toUsername);
             string fromAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
 
-            string subject = String.Format(CultureInfo.CurrentCulture, brandValues.InvitePackageOwner_EmailSubject, fromUsername, packageId);
+            string subject = String.Format(
+                CultureInfo.CurrentCulture, 
+                brandValues.InvitePackageOwner_EmailSubject, 
+                fromUsername, 
+                packageId);
             string bodyText = String.Format(
                 CultureInfo.CurrentCulture,
                 brandValues.InvitePackageOwner_EmailBody_Text,
@@ -409,26 +425,21 @@ namespace NuGet.Services.Messaging
                 brandValues.ConfirmPackageOwnershipInviteURL);
 
 
-            MailMessage email = new MailMessage();
-            email.From = new MailAddress(fromAddress);
-            email.To.Add(toAddress);
-            email.Subject = subject;
 
-            AlternateView plainMessage = AlternateView.CreateAlternateViewFromString(bodyText, null, "text/plain");
-            AlternateView htmlMessage = AlternateView.CreateAlternateViewFromString(bodyHTML, null, "text/html");
-            email.AlternateViews.Add(plainMessage);
-            email.AlternateViews.Add(htmlMessage);
+            // compose JSON
+            JObject emailJSON = new JObject();
+            emailJSON.Add("to", toAddress);
+            emailJSON.Add("from", fromAddress);
+            emailJSON.Add("subject", subject);
+            JObject body = new JObject();
+            body.Add("text", bodyText);
+            body.Add("html", bodyHTML);
+            emailJSON.Add("body", body);
 
 
-
-            //===================================
-            // TODO:  enqueue message
-
-            // Use Azure Storage Blob
-
-            bool result = ServiceHelper.SaveEmail(email);
-
-            //====================================
+            
+            // enqueue message
+            bool result = ServiceHelper.SaveMessage(emailJSON);
 
             if (result)
             {
@@ -445,43 +456,18 @@ namespace NuGet.Services.Messaging
         }
 
 
-        public static Task ContactSupportReasons(IOwinContext context, string brand)
+
+        /// <summary>
+        /// Obtains reasons for specified action, formatted using the brand's entity name.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="brand">The brand to use</param>
+        /// <param name="action">The action we want reasons for</param>
+        /// <returns></returns>
+        public static Task GetReasons(IOwinContext context, string brand, string action)
         {
             IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
-            String[] reasons = {
-                "The {0} contains private/confidential data",
-                "The {0} was published as the wrong version",
-                "The {0} was not intended to be published publically on this gallery",
-                "The {0} contains malicious code",
-                "Other" };
-
-            // replace entity with brand's entity name
-            for (int i = 0; i < reasons.Length-1; i++ )
-            {
-                reasons[i] = String.Format(CultureInfo.CurrentCulture, reasons[i], brandValues.EntityName);
-            }
-
-            // format as JSON
-            JObject reasonsJSON = new JObject();
-            reasonsJSON.Add("reasons", new JArray(reasons));
-            
-            // return response with body containing JSON
-            context.Response.StatusCode = (int)HttpStatusCode.OK;
-            context.Response.ContentType = "application/json";
-            context.Response.Headers.Add("Cache-Control", new string[] { "no-cache" });
-            return context.Response.WriteAsync(reasonsJSON.ToString());
-        }
-        
-
-        public static Task ReportAbuseReasons(IOwinContext context, string brand)
-        {
-            IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
-            String[] reasons = {
-                "The {0} owner is fraudulently claiming authorship",
-                "The {0} violates a license I own",
-                "The {0} contains malicious code",
-                "The {0} has a bug/failed to install",
-                "Other" };
+            String[] reasons = ServiceHelper.GetReasonsList(action);
 
             // replace entity with brand's entity name
             for (int i = 0; i < reasons.Length - 1; i++)
@@ -499,5 +485,6 @@ namespace NuGet.Services.Messaging
             context.Response.Headers.Add("Cache-Control", new string[] { "no-cache" });
             return context.Response.WriteAsync(reasonsJSON.ToString());
         }
+
     }
 }
