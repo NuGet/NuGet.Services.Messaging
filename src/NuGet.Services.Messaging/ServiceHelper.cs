@@ -79,23 +79,24 @@ namespace NuGet.Services.Messaging
 
         public static async Task<string> GetUserEmailAddressFromUsername(string username)
         {
-            ActiveDirectoryClient activeDirectoryClient = await GetActiveDirectoryClient();
-            IUser user = await activeDirectoryClient.Users.GetByObjectId(username).ExecuteAsync();
-            string emailAddress = user.Mail;  // assuming email is stored in mail
-            return emailAddress;
+            //ActiveDirectoryClient activeDirectoryClient = await GetActiveDirectoryClient();
+            //IUser user = await activeDirectoryClient.Users.GetByObjectId(username).ExecuteAsync();
+            //string emailAddress = user.Mail;  // assuming email is stored in mail
+            //return emailAddress;
+            return "someuser@live.com";
         }
 
         
         public static async Task<List<string>> GetOwnerEmailAddressesFromPackageID(string packageID)
         {
-            ActiveDirectoryClient activeDirectoryClient = await GetActiveDirectoryClient();
-            IGroup package = await activeDirectoryClient.Groups.GetByObjectId(packageID).ExecuteAsync();
-            IPagedCollection<IDirectoryObject> owners = package.Owners;
+            //ActiveDirectoryClient activeDirectoryClient = await GetActiveDirectoryClient();
+            //IGroup package = await activeDirectoryClient.Groups.GetByObjectId(packageID).ExecuteAsync();
+            //IPagedCollection<IDirectoryObject> owners = package.Owners;
 
             //owners.CurrentPage
             
 
-            List<string> ownerEmails = new List<string>();
+            //List<string> ownerEmails = new List<string>();
 
             // for each owner, call GetUserEmailAddressFromUsername(ownerUsername)
             

@@ -1,9 +1,12 @@
-﻿using System;
-using System.IO;
+﻿using Microsoft.Owin.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NuGet.Services.Messaging;
-using System.Net;
 using Newtonsoft.Json.Linq;
+using NuGet.Services.Messaging;
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace MessagingServiceTests
 {
@@ -12,49 +15,76 @@ namespace MessagingServiceTests
     [TestClass]
     public class ReportAbuseReasonsTests
     {
-        
-        [TestMethod]
-        public void TestReportAbuseReasons_NuGet()
+        private static TestServer _server;
+
+        [ClassInitialize]
+        public static void ClassInit(TestContext context)
         {
-            WebRequest request = (HttpWebRequest) WebRequest.Create("http://localhost:11717/reasons/reportAbuse/NuGet");
-            request.Method = WebRequestMethods.Http.Get;
-            WebResponse response = request.GetResponse();
+            _server = TestServer.Create<Startup>();
+        }
 
-            Assert.AreEqual(((HttpWebResponse)response).StatusCode, HttpStatusCode.OK);
-            Assert.AreEqual(((HttpWebResponse)response).ContentType, "application/json");
+        [ClassCleanup]
+        public static void ClassClean()
+        {
+            _server.Dispose();
+        }
 
-            Stream responseStream = response.GetResponseStream();
+        [TestMethod]
+        public async Task TestReportAbuseReasons_NuGet()
+        {
+            HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/reportAbuse/NuGet");
+            Stream responseStream = response.Content.ReadAsStreamAsync().Result;
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                StreamReader errorsReader = new StreamReader(responseStream);
+                string errorsString = errorsReader.ReadToEnd();
+                JObject errorsJSON = JObject.Parse(errorsString);
+                Assert.Fail();
+            }
+
+            
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual("application/json", response.Content.Headers.ContentType.ToString());
+
             StreamReader reader = new StreamReader(responseStream);
-            String bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
-
+            String reasonsString = reader.ReadToEnd();
+            JObject root = JObject.Parse(reasonsString);
             JArray reasons = root.Value<JArray>("reasons");
 
+            // check reasons
             Assert.AreEqual(reasons[0], "The package owner is fraudulently claiming authorship");
             Assert.AreEqual(reasons[1], "The package violates a license I own");
             Assert.AreEqual(reasons[2], "The package contains malicious code");
             Assert.AreEqual(reasons[3], "The package has a bug/failed to install");
             Assert.AreEqual(reasons[4], "Other");
-            
+
         }
 
         [TestMethod]
-        public void TestReportAbuseReasons_PowerShellGallery()
+        public async Task TestReportAbuseReasons_PowerShellGallery()
         {
-            WebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:11717/reasons/reportAbuse/PowerShellGallery");
-            request.Method = WebRequestMethods.Http.Get;
-            WebResponse response = request.GetResponse();
+            HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/reportAbuse/PowerShellGallery");
+            Stream responseStream = response.Content.ReadAsStreamAsync().Result;
 
-            Assert.AreEqual(((HttpWebResponse)response).StatusCode, HttpStatusCode.OK);
-            Assert.AreEqual(((HttpWebResponse)response).ContentType, "application/json");
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                StreamReader errorsReader = new StreamReader(responseStream);
+                string errorsString = errorsReader.ReadToEnd();
+                JObject errorsJSON = JObject.Parse(errorsString);
+                Assert.Fail();
+            }
 
-            Stream responseStream = response.GetResponseStream();
+
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual("application/json", response.Content.Headers.ContentType.ToString());
+
             StreamReader reader = new StreamReader(responseStream);
-            String bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
-
+            String reasonsString = reader.ReadToEnd();
+            JObject root = JObject.Parse(reasonsString);
             JArray reasons = root.Value<JArray>("reasons");
 
+            // check reasons
             Assert.AreEqual(reasons[0], "The module owner is fraudulently claiming authorship");
             Assert.AreEqual(reasons[1], "The module violates a license I own");
             Assert.AreEqual(reasons[2], "The module contains malicious code");
@@ -63,28 +93,32 @@ namespace MessagingServiceTests
         }
 
         [TestMethod]
-        public void TestReportAbuseReasons_InvalidBrand()
+        public async Task TestReportAbuseReasons_InvalidBrand()
         {
-            Startup s = new Startup();
-            PrivateObject pr = new PrivateObject(s);
+            HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/reportAbuse/SomeBrand");
+            Stream errorStream = response.Content.ReadAsStreamAsync().Result;
 
-            //pr.Invoke()
+            Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
 
-            WebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:11717/reasons/reportAbuse/SomeBrand");
-            request.Method = WebRequestMethods.Http.Get;
-            WebResponse response = request.GetResponse();
+            StreamReader reader = new StreamReader(errorStream);
+            String errorString = reader.ReadToEnd();
 
-            Assert.AreEqual(((HttpWebResponse)response).StatusCode, HttpStatusCode.NotFound);
+            Assert.AreEqual("NotFound", errorString);
+
         }
 
         [TestMethod]
-        public void TestReportAbuseReasons_NoBrand()
+        public async Task TestReportAbuseReasons_NoBrand()
         {
-            WebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:11717/reasons/reportAbuse");
-            request.Method = WebRequestMethods.Http.Get;
-            WebResponse response = request.GetResponse();
+            HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/reportAbuse");
+            Stream errorStream = response.Content.ReadAsStreamAsync().Result;
 
-            Assert.AreEqual(((HttpWebResponse)response).StatusCode, HttpStatusCode.NotFound);
+            Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+
+            StreamReader reader = new StreamReader(errorStream);
+            String errorString = reader.ReadToEnd();
+
+            Assert.AreEqual("NotFound", errorString);
         }
 
     }
@@ -93,24 +127,44 @@ namespace MessagingServiceTests
     [TestClass]
     public class ContactSupportReasonsTests
     {
+        private static TestServer _server;
+
+        [ClassInitialize]
+        public static void ClassInit(TestContext context)
+        {
+            _server = TestServer.Create<Startup>();
+        }
+
+        [ClassCleanup]
+        public static void ClassClean()
+        {
+            _server.Dispose();
+        }
         
         [TestMethod]
-        public void TestContactSupportReasons_NuGet()
+        public async Task TestContactSupportReasons_NuGet()
         {
-            WebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:11717/reasons/contactSupport/NuGet");
-            request.Method = WebRequestMethods.Http.Get;
-            WebResponse response = request.GetResponse();
+            HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/contactSupport/NuGet");
+            Stream responseStream = response.Content.ReadAsStreamAsync().Result;
 
-            Assert.AreEqual(((HttpWebResponse)response).StatusCode, HttpStatusCode.OK);
-            Assert.AreEqual(((HttpWebResponse)response).ContentType, "application/json");
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                StreamReader errorsReader = new StreamReader(responseStream);
+                string errorsString = errorsReader.ReadToEnd();
+                JObject errorsJSON = JObject.Parse(errorsString);
+                Assert.Fail();
+            }
 
-            Stream responseStream = response.GetResponseStream();
+
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual("application/json", response.Content.Headers.ContentType.ToString());
+
             StreamReader reader = new StreamReader(responseStream);
-            String bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
-
+            String reasonsString = reader.ReadToEnd();
+            JObject root = JObject.Parse(reasonsString);
             JArray reasons = root.Value<JArray>("reasons");
 
+            // check reasons
             Assert.AreEqual(reasons[0], "The package contains private/confidential data");
             Assert.AreEqual(reasons[1], "The package was published as the wrong version");
             Assert.AreEqual(reasons[2], "The package was not intended to be published publically on this gallery");
@@ -120,47 +174,63 @@ namespace MessagingServiceTests
         }
 
         [TestMethod]
-        public void TestContactSupportReasons_PowerShellGallery()
+        public async Task TestContactSupportReasons_PowerShellGallery()
         {
-            WebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:11717/reasons/contactSupport/PowerShellGallery");
-            request.Method = WebRequestMethods.Http.Get;
-            WebResponse response = request.GetResponse();
+            HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/contactSupport/PowerShellGallery");
+            Stream responseStream = response.Content.ReadAsStreamAsync().Result;
 
-            Assert.AreEqual(((HttpWebResponse)response).StatusCode, HttpStatusCode.OK);
-            Assert.AreEqual(((HttpWebResponse)response).ContentType, "application/json");
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                StreamReader errorsReader = new StreamReader(responseStream);
+                string errorsString = errorsReader.ReadToEnd();
+                JObject errorsJSON = JObject.Parse(errorsString);
+                Assert.Fail();
+            }
 
-            Stream responseStream = response.GetResponseStream();
+
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual("application/json", response.Content.Headers.ContentType.ToString());
+
             StreamReader reader = new StreamReader(responseStream);
-            String bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
-
+            String reasonsString = reader.ReadToEnd();
+            JObject root = JObject.Parse(reasonsString);
             JArray reasons = root.Value<JArray>("reasons");
 
+            // check reasons
             Assert.AreEqual(reasons[0], "The module contains private/confidential data");
             Assert.AreEqual(reasons[1], "The module was published as the wrong version");
             Assert.AreEqual(reasons[2], "The module was not intended to be published publically on this gallery");
             Assert.AreEqual(reasons[3], "The module contains malicious code");
             Assert.AreEqual(reasons[4], "Other");
+
         }
 
         [TestMethod]
-        public void TestContactSupportReasons_InvalidBrand()
+        public async Task TestContactSupportReasons_InvalidBrand()
         {
-            WebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:11717/reasons/contactSupport/SomeBrand");
-            request.Method = WebRequestMethods.Http.Get;
-            WebResponse response = request.GetResponse();
+            HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/contactSupport/SomeBrand");
+            Stream errorStream = response.Content.ReadAsStreamAsync().Result;
 
-            Assert.AreEqual(((HttpWebResponse)response).StatusCode, HttpStatusCode.NotFound);
+            Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+
+            StreamReader reader = new StreamReader(errorStream);
+            String errorString = reader.ReadToEnd();
+
+            Assert.AreEqual("NotFound", errorString);
         }
 
         [TestMethod]
-        public void TestContactSupportReasons_NoBrand()
+        public async Task TestContactSupportReasons_NoBrand()
         {
-            WebRequest request = (HttpWebRequest)WebRequest.Create("http://localhost:11717/reasons/contactSupport");
-            request.Method = WebRequestMethods.Http.Get;
-            WebResponse response = request.GetResponse();
+            HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/contactSupport");
+            Stream errorStream = response.Content.ReadAsStreamAsync().Result;
 
-            Assert.AreEqual(((HttpWebResponse)response).StatusCode, HttpStatusCode.NotFound);
+            Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+
+            StreamReader reader = new StreamReader(errorStream);
+            String errorString = reader.ReadToEnd();
+
+            Assert.AreEqual("NotFound", errorString);
         }
 
 

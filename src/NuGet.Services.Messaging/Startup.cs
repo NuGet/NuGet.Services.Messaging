@@ -4,6 +4,7 @@ using Owin;
 using System.Configuration;
 using System.Net;
 using System.Threading.Tasks;
+using NuGet.Services.Metadata.Catalog.Persistence;
 
 [assembly: OwinStartup(typeof(NuGet.Services.Messaging.Startup))]
 
@@ -11,11 +12,17 @@ namespace NuGet.Services.Messaging
 {
     public class Startup
     {
+        StorageManager _storageManager;
 
         public void Configuration(IAppBuilder app)
         {
             app.UseErrorPage();
 
+            if (_storageManager == null)
+            {
+                _storageManager = new StorageManager();
+            }
+            
             app.UseWindowsAzureActiveDirectoryBearerAuthentication(
                 new WindowsAzureActiveDirectoryBearerAuthenticationOptions
                 {
@@ -24,6 +31,13 @@ namespace NuGet.Services.Messaging
                 });
 
             app.Run(Invoke);
+        }
+
+
+        // used to inject faults in storage, for unit testing
+        public void ConfigureStorageManager(StorageManager sm)
+        {
+            _storageManager = sm;
         }
 
 
@@ -39,8 +53,8 @@ namespace NuGet.Services.Messaging
                     await InvokePOST(context);
                     break;
                 default:
-                    await context.Response.WriteAsync("NotFound");
                     context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                    await context.Response.WriteAsync("NotFound");
                     break;
             }
         }
@@ -51,8 +65,9 @@ namespace NuGet.Services.Messaging
             {
                 case "/":
                     {
-                        await context.Response.WriteAsync("OK");
+                        
                         context.Response.StatusCode = (int)HttpStatusCode.OK;
+                        await context.Response.WriteAsync("OK");
                         break;
                     }
                 case "/reasons/contactSupport/NuGet":
@@ -77,8 +92,8 @@ namespace NuGet.Services.Messaging
                     }
                 default:
                     {
-                        await context.Response.WriteAsync("NotFound");
                         context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                        await context.Response.WriteAsync("NotFound");
                         break;
                     }
             }
@@ -90,29 +105,29 @@ namespace NuGet.Services.Messaging
             {
                 case "/contactOwners":
                     {
-                        await ServiceImpl.ContactOwners(context);
+                        await ServiceImpl.ContactOwners(context, _storageManager);
                         break;
                     }
                 case "/reportAbuse":
                     {
-                        await ServiceImpl.ReportAbuse(context);
+                        await ServiceImpl.ReportAbuse(context, _storageManager);
                         break;
                     }
                 case "/contactSupport":
                     {
-                        await ServiceImpl.ContactSupport(context);
+                        await ServiceImpl.ContactSupport(context, _storageManager);
                         break;
                     }
 
                 case "/invitePackageOwner":
                     {
-                        await ServiceImpl.InvitePackageOwner(context);
+                        await ServiceImpl.InvitePackageOwner(context, _storageManager);
                         break;
                     }
                 default:
                     {
-                        await context.Response.WriteAsync("NotFound");
                         context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                        await context.Response.WriteAsync("NotFound");
                         break;
                     }
             }

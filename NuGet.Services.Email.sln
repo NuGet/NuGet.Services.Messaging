@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Messaging", "src\NuGet.Services.Messaging\NuGet.Services.Messaging.csproj", "{E481A372-EFF4-4831-BF85-B310851969B5}"
 EndProject
@@ -16,6 +16,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Configurations", "Configura
 		PublishScripts\Configurations\NuGetServicesMessaging-WAWS-dev.json = PublishScripts\Configurations\NuGetServicesMessaging-WAWS-dev.json
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{1AFBAB15-3915-4996-8668-07265750D72F}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+		.nuget\packages.config = .nuget\packages.config
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessagingServiceTests", "MessagingServiceTests\MessagingServiceTests.csproj", "{A4F5F749-94D1-411A-B939-9BCDB3D64926}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0E68B60A-46EF-43EF-B453-1994AEB453C9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +38,10 @@ Global
 		{E481A372-EFF4-4831-BF85-B310851969B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E481A372-EFF4-4831-BF85-B310851969B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E481A372-EFF4-4831-BF85-B310851969B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4F5F749-94D1-411A-B939-9BCDB3D64926}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4F5F749-94D1-411A-B939-9BCDB3D64926}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4F5F749-94D1-411A-B939-9BCDB3D64926}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4F5F749-94D1-411A-B939-9BCDB3D64926}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

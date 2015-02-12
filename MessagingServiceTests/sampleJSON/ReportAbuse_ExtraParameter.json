@@ -1,0 +1,12 @@
+{
+	"packageId": "SomeTestPackage",
+	"packageVersion": "1.0.0",
+	"copyMe": true,
+	"reason": "This package has a bug in it.",
+	"message": "Please remove this package right away, it is terrible!",
+	"ownersContacted": true,
+	"fromUsername": "rebro-1",
+	"fromAddress": "rebro-somewhere@live.com",
+    "brand": "PowerShellGallery", 
+    "extraParameter":  "Oh no!  I should not be here."
+}

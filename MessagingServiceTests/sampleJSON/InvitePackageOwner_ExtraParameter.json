@@ -1,0 +1,9 @@
+{
+	"packageId": "SomeTestPackage",
+	"packageVersion": "1.0.0",
+	"message": "I have added you as an owner of this package.  It is your problem now!",
+	"toUsername": "rebro-2",
+	"fromUsername": "rebro-1",
+    "brand": "PowerShellGallery",
+    "extraParameter":  "Oh no!  I should not be here."
+}

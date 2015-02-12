@@ -102,7 +102,7 @@ If you do not want to be listed as an owner of this package, simply delete this 
 
 To accept this request and become a listed owner of the package, click the following URL:
 
-[NuGet Gallery]({3})
+[NuGet Gallery]({2})
 
 Thanks,
 The NuGet Gallery Team";
@@ -111,7 +111,7 @@ If you do not want to be listed as an owner of this package, simply delete this 
 
 To accept this request and become a listed owner of the package, click the following URL:
 
-[NuGet Gallery]({3})
+[NuGet Gallery]({2})
 
 Thanks,
 The NuGet Gallery Team";

@@ -7,7 +7,7 @@ namespace NuGet.Services.Messaging.Brand.PowerShellGallery
     public class Constants : IConstants
     {
 
-        private const string _siteRoot = "http://www.powershellgallery.com/";
+        private const string _siteRoot = "http://www.powershellgallery.com";
         private const string _brand = "PowerShell";
         private const string _entityName = "module";
         private const string _supportTeamEmail = "support@powershellgallery.com";
@@ -35,7 +35,7 @@ namespace NuGet.Services.Messaging.Brand.PowerShellGallery
     [change your email notification settings]({4}).
     </em>";
 
-        private const string _reportAbuse_EmailSubject = "[" + _brand + " Gallery] Support Request for '{0}' version {1} (Reason: {2})";
+        private const string _reportAbuse_EmailSubject = "[" + _brand + "Gallery] Support Request for '{0}' version {1} (Reason: {2})";
         private const string _reportAbuse_EmailBody_Text = @"**Email:** {0} ({1})
 
 **Module:** {2}
@@ -69,7 +69,7 @@ namespace NuGet.Services.Messaging.Brand.PowerShellGallery
 **Message:**
 {8}";
 
-        private const string _contactSupport_EmailSubject = "["+_brand+" Gallery] Support Request for '{0}' version {1} (Reason: {2})";
+        private const string _contactSupport_EmailSubject = "["+_brand+"Gallery] Support Request for '{0}' version {1} (Reason: {2})";
         private const string _contactSupport_EmailBody_Text = @"**Email:** {0} ({1})
 
 **Module:** {2}
@@ -97,13 +97,13 @@ namespace NuGet.Services.Messaging.Brand.PowerShellGallery
 **Message:**
 {7}";
 
-        private const string _invitePackageOwner_EmailSubject = "["+_brand+" Gallery] The user '{0}' wants to add you as an owner of the module '{1}'.";
+        private const string _invitePackageOwner_EmailSubject = "["+_brand+"Gallery] The user '{0}' wants to add you as an owner of the module '{1}'.";
         private const string _invitePackageOwner_EmailBody_Text = @"The user '{0}' wants to add you as an owner of the module '{1}'. 
 If you do not want to be listed as an owner of this module, simply delete this email.
 
 To accept this request and become a listed owner of the module, click the following URL:
 
-[PowerShell Gallery]({3})
+[PowerShell Gallery]({2})
 
 Thanks,
 The PowerShell Gallery Team";
@@ -112,7 +112,7 @@ If you do not want to be listed as an owner of this module, simply delete this e
 
 To accept this request and become a listed owner of the module, click the following URL:
 
-[PowerShell Gallery]({3})
+[PowerShell Gallery]({2})
 
 Thanks,
 The PowerShell Gallery Team";

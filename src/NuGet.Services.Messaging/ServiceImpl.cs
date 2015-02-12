@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using System.IO;
 using System.Globalization;
 using System.Collections.Generic;
+using NuGet.Services.Metadata.Catalog.Persistence;
 
 namespace NuGet.Services.Messaging
 {
@@ -19,7 +20,7 @@ namespace NuGet.Services.Messaging
         /// </summary>
         /// <param name="context">Request body contains JSON file of required data, passed from front-end.</param>
         /// <returns></returns>
-        public static async Task ContactOwners(IOwinContext context)
+        public static async Task ContactOwners(IOwinContext context, StorageManager storageManager)
         {
             StreamReader reader = new StreamReader(context.Request.Body);
             string bodyContent = reader.ReadToEnd();
@@ -27,14 +28,17 @@ namespace NuGet.Services.Messaging
             
 
             // verify parameters
-            String[] requiredParams = { "packageID", "packageVersion", "copyMe", "message", "fromUsername", "brand" };
+            String[] requiredParams = { "packageId", "packageVersion", "copyMe", "message", "fromUsername", "brand" };
             List<string> missingParams = ServiceHelper.VerifyRequiredParameters(root, requiredParams);
             if (missingParams.Count > 0)
             {
                 JObject errorObject = new JObject();
-                errorObject.Add("Error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("Description", "ContactOwners FAIL: Insufficient parameters.  Missing: " + missingParams.ToString());
-                //context.Response.ContentType = "application/json";
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "ContactOwners FAIL: Insufficient parameters.");
+                JArray missingParamsArr = new JArray(missingParams);
+                errorObject.Add("missingParameters", missingParamsArr);
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
@@ -111,8 +115,7 @@ namespace NuGet.Services.Messaging
 
 
             // enqueue message
-            bool result = ServiceHelper.SaveMessage(emailJSON);
-            
+            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), "email1");
             
             if (result)
             {
@@ -122,8 +125,12 @@ namespace NuGet.Services.Messaging
             }
             else
             {
-                await context.Response.WriteAsync("ContactOwners FAIL: EmailNotSent");
+                JObject errorObject = new JObject();
+                errorObject.Add("error", (int)HttpStatusCode.ServiceUnavailable);
+                errorObject.Add("description", "ContactOwners FAIL: Storage unavailable.  Email not sent.");
+                context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
 
@@ -136,7 +143,7 @@ namespace NuGet.Services.Messaging
         /// </summary>
         /// <param name="context">Request body contains JSON file of required data, passed from front-end.</param>
         /// <returns></returns>
-        public static async Task ReportAbuse(IOwinContext context)
+        public static async Task ReportAbuse(IOwinContext context, StorageManager storageManager)
         {
             StreamReader reader = new StreamReader(context.Request.Body);
             string bodyContent = reader.ReadToEnd();
@@ -144,13 +151,17 @@ namespace NuGet.Services.Messaging
 
 
             // verify parameters
-            String[] requiredParams = { "packageID", "packageVersion", "copyMe", "reason", "message", "ownersContacted", "fromUsername", "fromAddress", "brand" };
+            String[] requiredParams = { "packageId", "packageVersion", "copyMe", "reason", "message", "ownersContacted", "fromUsername", "fromAddress", "brand" };
             List<string> missingParams = ServiceHelper.VerifyRequiredParameters(root, requiredParams);
             if (missingParams.Count > 0)
             {
                 JObject errorObject = new JObject();
-                errorObject.Add("Error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("Description", "ReportAbuse FAIL: Insufficient parameters.  Missing: " + missingParams.ToString());
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "ReportAbuse FAIL: Insufficient parameters.");
+                JArray missingParamsArr = new JArray(missingParams);
+                errorObject.Add("missingParameters", missingParamsArr);
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
@@ -242,7 +253,7 @@ namespace NuGet.Services.Messaging
 
 
             // enqueue message
-            bool result = ServiceHelper.SaveMessage(emailJSON);
+            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), "email1");
 
             if (result)
             {
@@ -252,8 +263,12 @@ namespace NuGet.Services.Messaging
             }
             else
             {
-                await context.Response.WriteAsync("ReportAbuse FAIL: EmailNotSent");
+                JObject errorObject = new JObject();
+                errorObject.Add("error", (int)HttpStatusCode.ServiceUnavailable);
+                errorObject.Add("description", "ReportAbuse FAIL: Storage unavailable.  Email not sent.");
+                context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
         }
@@ -264,7 +279,7 @@ namespace NuGet.Services.Messaging
         /// </summary>
         /// <param name="context">Request body contains JSON file of required data, passed from front-end.</param>
         /// <returns></returns>
-        public static async Task ContactSupport(IOwinContext context)
+        public static async Task ContactSupport(IOwinContext context, StorageManager storageManager)
         {
             StreamReader reader = new StreamReader(context.Request.Body);
             string bodyContent = reader.ReadToEnd();
@@ -272,13 +287,17 @@ namespace NuGet.Services.Messaging
 
 
             // verify parameters
-            String[] requiredParams = { "packageID", "packageVersion", "copyMe", "reason", "message", "fromUsername", "brand" };
+            String[] requiredParams = { "packageId", "packageVersion", "copyMe", "reason", "message", "fromUsername", "brand" };
             List<string> missingParams = ServiceHelper.VerifyRequiredParameters(root, requiredParams);
             if (missingParams.Count > 0)
             {
                 JObject errorObject = new JObject();
-                errorObject.Add("Error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("Description", "ContactSupport FAIL: Insufficient parameters.  Missing: " + missingParams.ToString());
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "ContactSupport FAIL: Insufficient parameters.");
+                JArray missingParamsArr = new JArray(missingParams);
+                errorObject.Add("missingParameters", missingParamsArr);
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
@@ -351,8 +370,8 @@ namespace NuGet.Services.Messaging
 
             
             // enqueue message
-            bool result = ServiceHelper.SaveMessage(emailJSON);
-
+            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), "email1");
+            
             if (result)
             {
                 await context.Response.WriteAsync("ContactSupport OK");
@@ -361,8 +380,12 @@ namespace NuGet.Services.Messaging
             }
             else
             {
-                await context.Response.WriteAsync("ContactSupport FAIL: EmailNotSent");
+                JObject errorObject = new JObject();
+                errorObject.Add("error", (int)HttpStatusCode.ServiceUnavailable);
+                errorObject.Add("description", "ContactSupport FAIL: Storage unavailable.  Email not sent.");
+                context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
         }
@@ -373,7 +396,7 @@ namespace NuGet.Services.Messaging
         /// </summary>
         /// <param name="context">Request body contains JSON file of required data, passed from front-end.</param>
         /// <returns></returns>
-        public static async Task InvitePackageOwner(IOwinContext context)
+        public static async Task InvitePackageOwner(IOwinContext context, StorageManager storageManager)
         {
             StreamReader reader = new StreamReader(context.Request.Body);
             string bodyContent = reader.ReadToEnd();
@@ -381,13 +404,17 @@ namespace NuGet.Services.Messaging
 
 
             // verify parameters
-            String[] requiredParams = { "packageID", "packageVersion", "message", "toUsername", "fromUsername", "brand" };
+            String[] requiredParams = { "packageId", "packageVersion", "message", "toUsername", "fromUsername", "brand" };
             List<string> missingParams = ServiceHelper.VerifyRequiredParameters(root, requiredParams);
             if (missingParams.Count > 0)
             {
                 JObject errorObject = new JObject();
-                errorObject.Add("Error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("Description", "InvitePackageOwner FAIL: Insufficient parameters.  Missing: " + missingParams.ToString());
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "InvitePackageOwner FAIL: Insufficient parameters.");
+                JArray missingParamsArr = new JArray(missingParams);
+                errorObject.Add("missingParameters", missingParamsArr);
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
@@ -439,8 +466,8 @@ namespace NuGet.Services.Messaging
 
             
             // enqueue message
-            bool result = ServiceHelper.SaveMessage(emailJSON);
-
+            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), "email1");
+            
             if (result)
             {
                 await context.Response.WriteAsync("InvitePackageOwner OK");
@@ -449,8 +476,12 @@ namespace NuGet.Services.Messaging
             }
             else
             {
-                await context.Response.WriteAsync("InvitePackageOwner FAIL: EmailNotSent");
+                JObject errorObject = new JObject();
+                errorObject.Add("error", (int)HttpStatusCode.ServiceUnavailable);
+                errorObject.Add("description", "InvitePackageOwner FAIL: Storage unavailable.  Email not sent.");
+                context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
         }
