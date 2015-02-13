@@ -33,10 +33,9 @@ namespace NuGet.Services.Messaging
             //  string userId = (userClaim != null) ? userClaim.Value : string.Empty;
             
 
-            //
             // The Scope claim tells you what permissions the client application has in the service.
             // In this case we look for a scope value of user_impersonation, or full access to the service as the user.
-            //
+            
             Claim scopeClaim = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope");
             bool authorized = (scopeClaim != null && scopeClaim.Value == "user_impersonation");
 
@@ -83,6 +82,9 @@ namespace NuGet.Services.Messaging
             //IUser user = await activeDirectoryClient.Users.GetByObjectId(username).ExecuteAsync();
             //string emailAddress = user.Mail;  // assuming email is stored in mail
             //return emailAddress;
+
+
+            // for now, return dummy values
             return "someuser@live.com";
         }
 
@@ -95,17 +97,13 @@ namespace NuGet.Services.Messaging
 
             //owners.CurrentPage
             
-
             //List<string> ownerEmails = new List<string>();
-
             // for each owner, call GetUserEmailAddressFromUsername(ownerUsername)
-            
             // store each email in a list
             
 
 
-           
-
+            // for now, return dummy values
             return new List<string> { "user1@gmail.com", "user2@gmail.com", "user3@gmail.com" };
 
         }
@@ -183,75 +181,6 @@ namespace NuGet.Services.Messaging
             }
             return missingParams;
         }
-
-
-        public static bool SaveMessage(JObject message)
-        {
-            // get storage
-
-            
-            
-            
-            // so some saving
-            // get storage
-            // call storage.save()
-
-
-
-            return true;
-        }
-
-
-        /*
-         * Taken from NuGet.Services.Publish.PublishImpl.cs > SaveNupkg()
-        public static async Task<Uri> SaveEmail(Stream email, string name)
-        {
-            
-         * string storagePrimary = System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Primary");
-            string storageContainerEmails = System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Container.Emails") ?? "emails";
-
-            CloudStorageAccount account = CloudStorageAccount.Parse(storagePrimary);
-
-            CloudBlobClient client = account.CreateCloudBlobClient();
-            CloudBlobContainer container = client.GetContainerReference(storageContainerEmails);
-            if (await container.CreateIfNotExistsAsync())
-            {
-                //TODO: good for testing not so great for multi-tenant
-                container.SetPermissions(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
-            }
-
-            CloudBlockBlob blob = container.GetBlockBlobReference(name);
-            blob.Properties.ContentType = "application/json";
-            //blob.Properties.ContentDisposition = name;
-
-            email.Seek(0, SeekOrigin.Begin);
-            await blob.UploadFromStreamAsync(email);
-
-            return blob.Uri;
-         * 
-         * 
-         * 
-         * 
-         * 
-            string storagePrimary = System.Configuration.ConfigurationManager.AppSettings.Get("Storage.Primary");
-            CloudStorageAccount account = CloudStorageAccount.Parse(storagePrimary);
-
-            CloudBlobClient client = account.CreateCloudBlobClient();
-            CloudBlobContainer container = client.GetContainerReference("emails");
-            await container.CreateIfNotExistsAsync();
-
-            CloudBlockBlob blob = container.GetBlockBlobReference(name);
-            blob.Properties.ContentType = "application/octet-stream";  
-            blob.Properties.ContentDisposition = name;
-            email.Seek(0, SeekOrigin.Begin);
-            await blob.UploadFromStreamAsync(email);
-
-            return blob.Uri;
-        }
-         */
-
-
-
 
 
     }

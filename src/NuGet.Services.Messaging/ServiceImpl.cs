@@ -15,10 +15,11 @@ namespace NuGet.Services.Messaging
     {
 
         /// <summary>
-        /// Creates and formats ContactOwners email, and stores it in an Azure Storage Blob.
-        /// Uses an AAD connection to obtain required information.
+        /// Create and format ContactOwners message (in JSON), and then store it in an Azure Storage Blob.
+        /// Use an AAD connection to obtain required information.
         /// </summary>
-        /// <param name="context">Request body contains JSON file of required data, passed from front-end.</param>
+        /// <param name="context">Context's request body contains JSON file of parameters, passed from front-end.</param>
+        /// <param name="storageManager">Use to store message.</param>
         /// <returns></returns>
         public static async Task ContactOwners(IOwinContext context, StorageManager storageManager)
         {
@@ -68,8 +69,12 @@ namespace NuGet.Services.Messaging
 
             if (!contactAllowed)
             {
-                await context.Response.WriteAsync("ContactOwners FAIL: Contact owners not allowed.");
+                JObject errorObject = new JObject();
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "ContactOwners FAIL: Contact owners not allowed.");
+                context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
 
@@ -119,8 +124,8 @@ namespace NuGet.Services.Messaging
             
             if (result)
             {
-                await context.Response.WriteAsync("ContactOwners OK");
                 context.Response.StatusCode = (int)HttpStatusCode.OK;
+                await context.Response.WriteAsync("ContactOwners OK");
                 return;
             }
             else
@@ -138,10 +143,11 @@ namespace NuGet.Services.Messaging
 
 
         /// <summary>
-        /// Creates and formats ReportAbuse email, and stores it in an Azure Storage Blob.
-        /// Uses an AAD connection to obtain required information.
+        /// Create and format ReportAbuse email, and then store it in an Azure Storage Blob.
+        /// Use an AAD connection to obtain required information.
         /// </summary>
-        /// <param name="context">Request body contains JSON file of required data, passed from front-end.</param>
+        /// <param name="context">Context's request body contains JSON file of parameters, passed from front-end.</param>
+        /// <param name="storageManager">Use to store message.</param>
         /// <returns></returns>
         public static async Task ReportAbuse(IOwinContext context, StorageManager storageManager)
         {
@@ -180,17 +186,24 @@ namespace NuGet.Services.Messaging
 
             if (String.IsNullOrEmpty(fromUsername) && String.IsNullOrEmpty(fromAddress))
             {
-                await context.Response.WriteAsync("ReportAbuse FAIL: Insufficient parameters.  Need either fromUsername or fromAddress.");
+                JObject errorObject = new JObject();
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "ReportAbuse FAIL: Insufficient parameters.  Need either fromUsername or fromAddress.");
+                context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
 
             if (!ownersContacted)
             {
-                await context.Response.WriteAsync("ReportAbuse FAIL: Try ContactOwners first.");
+                JObject errorObject = new JObject();
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "ReportAbuse FAIL: Try ContactOwners first.");
+                context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                await context.Response.WriteAsync(errorObject.ToString());
                 return;
-                
             }
             
             IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
@@ -257,8 +270,8 @@ namespace NuGet.Services.Messaging
 
             if (result)
             {
-                await context.Response.WriteAsync("ReportAbuse OK");
                 context.Response.StatusCode = (int)HttpStatusCode.OK;
+                await context.Response.WriteAsync("ReportAbuse OK");
                 return;
             }
             else
@@ -274,10 +287,11 @@ namespace NuGet.Services.Messaging
         }
 
         /// <summary>
-        /// Creates and formats ContactSupport email, and stores it in an Azure Storage Blob.
-        /// Uses an AAD connection to obtain required information.
+        /// Create and format ContactSupport email, and then store it in an Azure Storage Blob.
+        /// Use an AAD connection to obtain required information.
         /// </summary>
-        /// <param name="context">Request body contains JSON file of required data, passed from front-end.</param>
+        /// <param name="context">Context's request body contains JSON file of parameters, passed from front-end.</param>
+        /// <param name="storageManager">Use to store message.</param>
         /// <returns></returns>
         public static async Task ContactSupport(IOwinContext context, StorageManager storageManager)
         {
@@ -374,8 +388,8 @@ namespace NuGet.Services.Messaging
             
             if (result)
             {
-                await context.Response.WriteAsync("ContactSupport OK");
                 context.Response.StatusCode = (int)HttpStatusCode.OK;
+                await context.Response.WriteAsync("ContactSupport OK");
                 return;
             }
             else
@@ -391,10 +405,11 @@ namespace NuGet.Services.Messaging
         }
 
         /// <summary>
-        /// Creates and formats ConfirmOwnerInvite email, and stores it in an Azure Storage Blob.
-        /// Uses an AAD connection to obtain required information.
+        /// Create and format ConfirmOwnerInvite email, and then store it in an Azure Storage Blob.
+        /// Use an AAD connection to obtain required information.
         /// </summary>
-        /// <param name="context">Request body contains JSON file of required data, passed from front-end.</param>
+        /// <param name="context">Context's request body contains JSON file of parameters, passed from front-end.</param>
+        /// <param name="storageManager">Use to store message.</param>
         /// <returns></returns>
         public static async Task InvitePackageOwner(IOwinContext context, StorageManager storageManager)
         {
@@ -470,8 +485,8 @@ namespace NuGet.Services.Messaging
             
             if (result)
             {
-                await context.Response.WriteAsync("InvitePackageOwner OK");
                 context.Response.StatusCode = (int)HttpStatusCode.OK;
+                await context.Response.WriteAsync("InvitePackageOwner OK");
                 return;
             }
             else
@@ -489,11 +504,11 @@ namespace NuGet.Services.Messaging
 
 
         /// <summary>
-        /// Obtains reasons for specified action, formatted using the brand's entity name.
+        /// Obtain reasons for specified action, formatted using the brand's entity name.
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="brand">The brand to use</param>
-        /// <param name="action">The action we want reasons for</param>
+        /// <param name="context">Use to send back response.</param>
+        /// <param name="brand">The this brand to obtain entity.</param>
+        /// <param name="action">The action we want reasons for.</param>
         /// <returns></returns>
         public static Task GetReasons(IOwinContext context, string brand, string action)
         {

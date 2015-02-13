@@ -177,7 +177,7 @@ namespace MessagingServiceTests
             }
 
             // says service unavailable, but has the response?
-            //Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
@@ -337,7 +337,7 @@ namespace MessagingServiceTests
             }
 
             // says service unavailable, but has the response?
-            //Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
@@ -425,7 +425,7 @@ Please remove this package right away, it is terrible!", root["body"]["html"]);
             }
 
             // says service unavailable, but has the response?
-            //Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
@@ -593,7 +593,7 @@ Please remove this package right away, it is terrible!", root["body"]["html"]);
             }
 
             // says service unavailable, but has the response?
-            //Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
@@ -674,7 +674,7 @@ Please remove this package right away, it has all my secrets in it!", root["body
             }
 
             // says service unavailable, but has the response?
-            //Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
@@ -833,7 +833,7 @@ Please remove this package right away, it has all my secrets in it!", root["body
             }
 
             // says service unavailable, but has the response?
-            //Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
@@ -905,7 +905,7 @@ The PowerShell Gallery Team", root["body"]["html"]);
             }
 
             // says service unavailable, but has the response?
-            //Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
