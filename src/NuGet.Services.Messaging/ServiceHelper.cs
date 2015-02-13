@@ -21,6 +21,14 @@ namespace NuGet.Services.Messaging
         static string clientId = ConfigurationManager.AppSettings["ida:ClientId"];
         static string appKey = ConfigurationManager.AppSettings["ida:AppKey"];
         static string tenant = ConfigurationManager.AppSettings["ida:Tenant"];
+        private static string[] _brandsOptions = { "NuGet", "PowerShellGallery" };
+
+
+        public static string[] BrandsOptions()
+        {
+            return _brandsOptions;
+        }
+
 
 
         // needed??
@@ -126,7 +134,7 @@ namespace NuGet.Services.Messaging
                     }
                 default:
                     {
-                        brandValues = new NuGet.Services.Messaging.Brand.NuGet.Constants();
+                        brandValues = null;
                         break;
                     }
             }

@@ -14,6 +14,11 @@ namespace NuGet.Services.Messaging.Brand.NuGet
         private const string _changeEmailNotificationsURL = "/profile/edit"; // TODO:  Get real path
         private const string _confirmPackageOwnershipInviteURL = "/owners/confirm";  // TODO:  Get real path
 
+        private const string _verifyEmailURL = "/profile/email/verify";  // TODO:  Get real URL
+        private const string _resetPasswordExpirationTime = "5";        // TODO:  get real expiration time
+        private const string _resetPasswordURL = "profile/password/reset";      // TODO:  get real URL
+
+
 
 
         // TODO:  Get real email formats
@@ -118,6 +123,115 @@ The NuGet Gallery Team";
 
 
 
+        private const string _newAccountWelcome_EmailSubject = "[NuGet Gallery] Please verify your account.";
+        private const string _newAccountWelcome_EmailBody_Text = @"Thank you for registering with the NuGet Gallery. 
+We can't wait to see what packages you'll upload.
+
+So we can be sure to contact you, please verify your email address and click the following link:
+
+{0}
+
+Thanks,
+The NuGet Team";
+        private const string _newAccountWelcome_EmailBody_HTML = @"Thank you for registering with the NuGet Gallery. 
+We can't wait to see what packages you'll upload.
+
+So we can be sure to contact you, please verify your email address and click the following link:
+
+{0}
+
+Thanks,
+The NuGet Team";
+
+
+
+
+
+        private const string _changeEmailNotice_oldEmail_EmailSubject = "[NuGet Gallery] Recent changes to your account.";
+        private const string _changeEmailNotice_oldEmail_EmailBody_Text = @"Hi there,
+
+The email address associated to your NuGet account was recently 
+changed from _{0}_ to _{1}_.
+
+Thanks,
+The NuGet Team";
+        private const string _changeEmailNotice_oldEmail_EmailBody_HTML = @"Hi there,
+
+The email address associated to your NuGet account was recently 
+changed from _{0}_ to _{1}_.
+
+Thanks,
+The NuGet Team";
+
+        private const string _changeEmailNotice_newEmail_EmailSubject = "[NuGet Gallery] Please verify your new email address.";
+        private const string _changeEmailNotice_newEmail_EmailBody_Text = @"You recently changed your NuGet email address. 
+
+To verify your new email address, please click the following link:
+
+{0}
+
+Thanks,
+The NuGet Team";
+        private const string _changeEmailNotice_newEmail_EmailBody_HTML = @"You recently changed your {0} email address. 
+
+To verify your new email address, please click the following link:
+
+[{1}]({2})
+
+Thanks,
+The NuGet Team";
+
+        private const string _resetPasswordInstructions_forgot_EmailSubject = "[NuGet Gallery] Please reset your password.";
+        private const string _resetPasswordInstructions_forgot_EmailBody_Text = @"The word on the street is you lost your password. Sorry to hear it!
+If you haven't forgotten your password you can safely ignore this email. Your password has not been changed.
+
+Click the following link within the next {0} hours to reset your password:
+
+{1}
+
+Thanks,
+The NuGet Team";
+        private const string _resetPasswordInstructions_forgot_EmailBody_HTML = @"The word on the street is you lost your password. Sorry to hear it!
+If you haven't forgotten your password you can safely ignore this email. Your password has not been changed.
+
+Click the following link within the next {0} hours to reset your password:
+
+{1}
+
+Thanks,
+The NuGet Team";
+
+        private const string _resetPasswordInstructions_reset_EmailSubject = "[NuGet Gallery] Please set your password.";
+        private const string _resetPasswordInstructions_reset_EmailBody_Text = @"The word on the street is you want to set a password for your account.
+If you didn't request a password, you can safely ignore this message. A password has not yet been set.
+
+Click the following link within the next {0} hours to set your password:
+
+{1}
+
+Thanks,
+The NuGet Team";
+        private const string _resetPasswordInstructions_reset_EmailBody_HTML = @"The word on the street is you want to set a password for your account.
+If you didn't request a password, you can safely ignore this message. A password has not yet been set.
+
+Click the following link within the next {0} hours to set your password:
+
+{1}
+
+Thanks,
+The NuGet Team";
+
+        private const string _editCredential_add_EmailSubject = "[NuGet Gallery] {0} added to your account";
+        private const string _editCredential_add_EmailBody_Text = "A {0} was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.";
+        private const string _editCredential_add_EmailBody_HTML = "A {0} was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.";
+
+        private const string _editCredential_remove_EmailSubject = "[NuGet Gallery] {0} removed from your account";
+        private const string _editCredential_remove_EmailBody_Text = "A {0} was removed from your account and can no longer be used to log in. If you did not request this change, please reply to this email to contact support.";
+        private const string _editCredential_remove_EmailBody_HTML = "A {0} was removed from your account and can no longer be used to log in. If you did not request this change, please reply to this email to contact support.";
+
+
+
+
 
         public string SiteRoot
         {
@@ -143,6 +257,21 @@ The NuGet Gallery Team";
         {
             get { return _confirmPackageOwnershipInviteURL; }
         }
+        public string VerifyEmailURL
+        {
+            get { return _verifyEmailURL; }
+        }
+        public string ResetPasswordExpirationTime
+        {
+            get { return _resetPasswordExpirationTime; }
+        }
+        public string ResetPasswordURL
+        {
+            get { return _resetPasswordURL; }
+        }
+
+
+        
         public string ContactOwners_EmailSubject
         {
             get { return _contactOwners_EmailSubject; }
@@ -191,8 +320,90 @@ The NuGet Gallery Team";
         {
             get { return _invitePackageOwner_EmailBody_HTML; }
         }
-
-
+        public string NewAccountWelcome_EmailSubject
+        {
+            get { return _newAccountWelcome_EmailSubject; }
+        }
+        public string NewAccountWelcome_EmailBody_Text
+        {
+            get { return _newAccountWelcome_EmailBody_Text; }
+        }
+        public string NewAccountWelcome_EmailBody_HTML
+        {
+            get { return _newAccountWelcome_EmailBody_HTML; }
+        }
+        public string ChangeEmailNotice_oldEmail_EmailSubject
+        {
+            get { return _changeEmailNotice_oldEmail_EmailSubject; }
+        }
+        public string ChangeEmailNotice_oldEmail_EmailBody_Text
+        {
+            get { return _changeEmailNotice_oldEmail_EmailBody_Text; }
+        }
+        public string ChangeEmailNotice_oldEmail_EmailBody_HTML
+        {
+            get { return _changeEmailNotice_oldEmail_EmailBody_HTML; }
+        }
+        public string ChangeEmailNotice_newEmail_EmailSubject
+        {
+            get { return _changeEmailNotice_newEmail_EmailSubject; }
+        }
+        public string ChangeEmailNotice_newEmail_EmailBody_Text
+        {
+            get { return _changeEmailNotice_newEmail_EmailBody_Text; }
+        }
+        public string ChangeEmailNotice_newEmail_EmailBody_HTML
+        {
+            get { return _changeEmailNotice_newEmail_EmailBody_HTML; }
+        }
+        public string ResetPasswordInstructions_forgot_EmailSubject
+        {
+            get { return _resetPasswordInstructions_forgot_EmailSubject; }
+        }
+        public string ResetPasswordInstructions_forgot_EmailBody_Text
+        {
+            get { return _resetPasswordInstructions_forgot_EmailBody_Text; }
+        }
+        public string ResetPasswordInstructions_forgot_EmailBody_HTML
+        {
+            get { return _resetPasswordInstructions_forgot_EmailBody_HTML; }
+        }
+        public string ResetPasswordInstructions_reset_EmailSubject
+        {
+            get { return _resetPasswordInstructions_reset_EmailSubject; }
+        }
+        public string ResetPasswordInstructions_reset_EmailBody_Text
+        {
+            get { return _resetPasswordInstructions_reset_EmailBody_Text; }
+        }
+        public string ResetPasswordInstructions_reset_EmailBody_HTML
+        {
+            get { return _resetPasswordInstructions_reset_EmailBody_HTML; }
+        }
+        public string EditCredential_add_EmailSubject
+        {
+            get { return _editCredential_add_EmailSubject; }
+        }
+        public string EditCredential_add_EmailBody_Text
+        {
+            get { return _editCredential_add_EmailBody_Text; }
+        }
+        public string EditCredential_add_EmailBody_HTML
+        {
+            get { return _editCredential_add_EmailBody_HTML; }
+        }
+        public string EditCredential_remove_EmailSubject
+        {
+            get { return _editCredential_remove_EmailSubject; }
+        }
+        public string EditCredential_remove_EmailBody_Text
+        {
+            get { return _editCredential_remove_EmailBody_Text; }
+        }
+        public string EditCredential_remove_EmailBody_HTML
+        {
+            get { return _editCredential_remove_EmailBody_HTML; }
+        }
 
     }
 }

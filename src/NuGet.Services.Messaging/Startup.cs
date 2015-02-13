@@ -65,7 +65,6 @@ namespace NuGet.Services.Messaging
             {
                 case "/":
                     {
-                        
                         context.Response.StatusCode = (int)HttpStatusCode.OK;
                         await context.Response.WriteAsync("OK");
                         break;
@@ -122,6 +121,26 @@ namespace NuGet.Services.Messaging
                 case "/invitePackageOwner":
                     {
                         await ServiceImpl.InvitePackageOwner(context, _storageManager);
+                        break;
+                    }
+                case "/newAccountWelcome":
+                    {
+                        await ServiceImpl.NewAccountWelcome(context, _storageManager);
+                        break;
+                    }
+                case "/changeEmailNotice":
+                    {
+                        await ServiceImpl.ChangeEmailNotice(context, _storageManager);
+                        break;
+                    }
+                case "/resetPasswordInstructions":
+                    {
+                        await ServiceImpl.ResetPasswordInstructions(context, _storageManager);
+                        break;
+                    }
+                case "/editCredential":
+                    {
+                        await ServiceImpl.EditCredential(context, _storageManager);
                         break;
                     }
                 default:
