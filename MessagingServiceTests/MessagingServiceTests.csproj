@@ -131,19 +131,32 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
-    <None Include="sampleJSON\ContactOwners_ExtraParameter.json" />
-    <None Include="sampleJSON\ContactOwners_MissingPackageId.json" />
-    <None Include="sampleJSON\ContactOwners.json" />
-    <None Include="sampleJSON\ContactSupport_ExtraParameter.json" />
-    <None Include="sampleJSON\ContactSupport_MissingPackageId.json" />
-    <None Include="sampleJSON\ContactSupport.json" />
-    <None Include="sampleJSON\InvitePackageOwner_ExtraParameter.json" />
-    <None Include="sampleJSON\InvitePackageOwner_MissingPackageId.json" />
-    <None Include="sampleJSON\InvitePackageOwner.json" />
-    <None Include="sampleJSON\ReportAbuse_ExtraParameter.json" />
-    <None Include="sampleJSON\ReportAbuse_MissingPackageId.json" />
-    <None Include="sampleJSON\ReportAbuse.json" />
+    <None Include="sampleJSON\ChangeEmailNoticeSamples\ChangeEmailNotice_MissingNewEmail.json" />
+    <None Include="sampleJSON\ChangeEmailNoticeSamples\ChangeEmailNotice_ExtraParameter.json" />
+    <None Include="sampleJSON\ChangeEmailNoticeSamples\ChangeEmailNotice.json" />
+    <None Include="sampleJSON\ContactOwnersSamples\ContactOwners_ExtraParameter.json" />
+    <None Include="sampleJSON\ContactOwnersSamples\ContactOwners_MissingPackageId.json" />
+    <None Include="sampleJSON\ContactOwnersSamples\ContactOwners.json" />
+    <None Include="sampleJSON\ContactSupportSamples\ContactSupport_ExtraParameter.json" />
+    <None Include="sampleJSON\ContactSupportSamples\ContactSupport_MissingPackageId.json" />
+    <None Include="sampleJSON\ContactSupportSamples\ContactSupport.json" />
+    <None Include="sampleJSON\EditCredentialSamples\EditCredential_ExtraParameter.json" />
+    <None Include="sampleJSON\EditCredentialSamples\EditCredential_MissingUsername.json" />
+    <None Include="sampleJSON\EditCredentialSamples\EditCredential.json" />
+    <None Include="sampleJSON\InvitePackageOwnerSamples\InvitePackageOwner_ExtraParameter.json" />
+    <None Include="sampleJSON\InvitePackageOwnerSamples\InvitePackageOwner_MissingPackageId.json" />
+    <None Include="sampleJSON\InvitePackageOwnerSamples\InvitePackageOwner.json" />
+    <None Include="sampleJSON\NewAccountWelcomeSamples\NewAccountWelcome_MissingEmail.json" />
+    <None Include="sampleJSON\NewAccountWelcomeSamples\NewAccountWelcome_ExtraParameter.json" />
+    <None Include="sampleJSON\NewAccountWelcomeSamples\NewAccountWelcome.json" />
+    <None Include="sampleJSON\ReportAbuseSamples\ReportAbuse_ExtraParameter.json" />
+    <None Include="sampleJSON\ReportAbuseSamples\ReportAbuse_MissingPackageId.json" />
+    <None Include="sampleJSON\ReportAbuseSamples\ReportAbuse.json" />
+    <None Include="sampleJSON\ResetPasswordInstructionsSamples\ResetPasswordInstructions_ExtraParameter.json" />
+    <None Include="sampleJSON\ResetPasswordInstructionsSamples\ResetPasswordInstructions_MissingAction.json" />
+    <None Include="sampleJSON\ResetPasswordInstructionsSamples\ResetPasswordInstructions.json" />
   </ItemGroup>
+  <ItemGroup />
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
       <ItemGroup>
