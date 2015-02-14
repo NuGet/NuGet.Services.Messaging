@@ -771,14 +771,14 @@ namespace NuGet.Services.Messaging
             // new address email
             string subject_newAddress = String.Format(
                 CultureInfo.CurrentCulture,
-                brandValues.NewAccountWelcome_EmailSubject);
+                brandValues.ChangeEmailNotice_newEmail_EmailSubject);
             string bodyText_newAddress = String.Format(
                 CultureInfo.CurrentCulture,
-                brandValues.NewAccountWelcome_EmailBody_Text,
+                brandValues.ChangeEmailNotice_newEmail_EmailBody_Text,
                 brandValues.VerifyEmailURL);
             string bodyHTML_newAddress = String.Format(
                 CultureInfo.CurrentCulture,
-                brandValues.NewAccountWelcome_EmailBody_HTML,
+                brandValues.ChangeEmailNotice_newEmail_EmailBody_HTML,
                 brandValues.VerifyEmailURL);
 
 

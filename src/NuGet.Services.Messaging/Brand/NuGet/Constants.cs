@@ -172,11 +172,11 @@ To verify your new email address, please click the following link:
 
 Thanks,
 The NuGet Team";
-        private const string _changeEmailNotice_newEmail_EmailBody_HTML = @"You recently changed your {0} email address. 
+        private const string _changeEmailNotice_newEmail_EmailBody_HTML = @"You recently changed your NuGet email address. 
 
 To verify your new email address, please click the following link:
 
-[{1}]({2})
+[Verify Email]({0})
 
 Thanks,
 The NuGet Team";
@@ -196,7 +196,7 @@ If you haven't forgotten your password you can safely ignore this email. Your pa
 
 Click the following link within the next {0} hours to reset your password:
 
-{1}
+[Reset Password]({1})
 
 Thanks,
 The NuGet Team";
@@ -216,7 +216,7 @@ If you didn't request a password, you can safely ignore this message. A password
 
 Click the following link within the next {0} hours to set your password:
 
-{1}
+[Set Password]({1})
 
 Thanks,
 The NuGet Team";
