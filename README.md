@@ -61,10 +61,6 @@ NuGet Messaging Service.
             | brand:            | string (options:  NuGet/PowerShellGallery)    |
 
 
-
-
-
-
         ###### NewAccountWelcome        /newAccountWelcome
             | Parameter         | Type                                          |
             | ----------------- | --------------------------------------------- |
@@ -95,6 +91,7 @@ NuGet Messaging Service.
             | ----------------- | --------------------------------------------- |
             | username:         | string (username)                             |
             | action:           | string (options:  add, remove)                |
+            | type:             | string (options: APIKey, password, MSAccount  |
             | brand:            | string (options:  NuGet)                      |
 
 

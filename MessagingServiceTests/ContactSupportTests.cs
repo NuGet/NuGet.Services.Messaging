@@ -26,7 +26,8 @@ namespace MessagingServiceTests
         private const string TestJSONPath = "../../sampleJSON/ContactSupportSamples/ContactSupport.json";
         private const string TestJSONPath_InsufficientParameters = "../../sampleJSON/ContactSupportSamples/ContactSupport_MissingPackageId.json";
         private const string TestJSONPath_ExtraParameters = "../../sampleJSON/ContactSupportSamples/ContactSupport_ExtraParameter.json";
-        //private const string TestJSONPath_InvalidParameters = "ContactSupport_InvalidParams.json";
+        private const string TestJSONPath_InvalidBrand = "../../sampleJSON/ContactSupportSamples/ContactSupport_InvalidBrand.json";
+        
         private const string fileStorageLocation = "../../Messages";
 
         [ClassInitialize]
@@ -108,27 +109,27 @@ namespace MessagingServiceTests
             Assert.AreEqual("support@powershellgallery.com", root["to"]);
             Assert.AreEqual("someuser@live.com", root["from"]);
             Assert.AreEqual("someuser@live.com", root["cc"]);
-            Assert.AreEqual("[PowerShellGallery] Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package contains sensitive data.)", root["subject"]);
-            Assert.AreEqual(@"**Email:** rebro-1 (someuser@live.com)
+            Assert.AreEqual("[PowerShell Gallery] Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package contains sensitive data.)", root["subject"]);
+            Assert.AreEqual(@"Email: rebro-1 (someuser@live.com)
 
-**Module:** SomeTestPackage
-http://www.powershellgallery.com/packages/SomeTestPackage
+Module: SomeTestPackage
+http://www.powershellgallery.com/modules/SomeTestPackage
 
-**Version:** 1.0.0
-http://www.powershellgallery.com/packages/SomeTestPackage/1.0.0
+Version: 1.0.0
+http://www.powershellgallery.com/modules/SomeTestPackage/1.0.0
 
-**Reason:**
+Reason:
 This package contains sensitive data.
 
-**Message:**
+Message:
 Please remove this package right away, it has all my secrets in it!", root["body"]["text"]);
             Assert.AreEqual(@"**Email:** rebro-1 (someuser@live.com)
 
 **Module:** SomeTestPackage
-http://www.powershellgallery.com/packages/SomeTestPackage
+http://www.powershellgallery.com/modules/SomeTestPackage
 
 **Version:** 1.0.0
-http://www.powershellgallery.com/packages/SomeTestPackage/1.0.0
+http://www.powershellgallery.com/modules/SomeTestPackage/1.0.0
 
 **Reason:**
 This package contains sensitive data.
@@ -189,27 +190,27 @@ Please remove this package right away, it has all my secrets in it!", root["body
             Assert.AreEqual("support@powershellgallery.com", root["to"]);
             Assert.AreEqual("someuser@live.com", root["from"]);
             Assert.AreEqual("someuser@live.com", root["cc"]);
-            Assert.AreEqual("[PowerShellGallery] Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package contains sensitive data.)", root["subject"]);
-            Assert.AreEqual(@"**Email:** rebro-1 (someuser@live.com)
+            Assert.AreEqual("[PowerShell Gallery] Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package contains sensitive data.)", root["subject"]);
+            Assert.AreEqual(@"Email: rebro-1 (someuser@live.com)
 
-**Module:** SomeTestPackage
-http://www.powershellgallery.com/packages/SomeTestPackage
+Module: SomeTestPackage
+http://www.powershellgallery.com/modules/SomeTestPackage
 
-**Version:** 1.0.0
-http://www.powershellgallery.com/packages/SomeTestPackage/1.0.0
+Version: 1.0.0
+http://www.powershellgallery.com/modules/SomeTestPackage/1.0.0
 
-**Reason:**
+Reason:
 This package contains sensitive data.
 
-**Message:**
+Message:
 Please remove this package right away, it has all my secrets in it!", root["body"]["text"]);
             Assert.AreEqual(@"**Email:** rebro-1 (someuser@live.com)
 
 **Module:** SomeTestPackage
-http://www.powershellgallery.com/packages/SomeTestPackage
+http://www.powershellgallery.com/modules/SomeTestPackage
 
 **Version:** 1.0.0
-http://www.powershellgallery.com/packages/SomeTestPackage/1.0.0
+http://www.powershellgallery.com/modules/SomeTestPackage/1.0.0
 
 **Reason:**
 This package contains sensitive data.
@@ -219,13 +220,26 @@ Please remove this package right away, it has all my secrets in it!", root["body
 
         }
 
-        /*
+        
         [TestMethod]
-        public void TestContactSupport_InvalidParameters()
+        public async Task TestContactSupport_InvalidBrand()
         {
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidBrand);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/contactSupport", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("ContactSupport FAIL: FakeBrand is not a valid brand.  Options:  NuGet, PowerShellGallery", errorsJSON["description"]);
             
         }
-        */
+        
         /*
         [TestMethod]
         public void TestContactSupport_AADConnectionFailed()

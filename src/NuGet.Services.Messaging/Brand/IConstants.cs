@@ -15,6 +15,8 @@ namespace NuGet.Services.Messaging
         string Brand { get; }
         string EntityName { get; }
         string SupportTeamEmail { get; }
+        string EntityURL { get; }
+        string EntityVersionURL { get; }
         string ChangeEmailNotificationsURL { get; }
         string ConfirmPackageOwnershipInviteURL { get; }
 

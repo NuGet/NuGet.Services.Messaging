@@ -29,7 +29,8 @@ namespace MessagingServiceTests
         private const string TestJSONPath = "../../sampleJSON/ContactOwnersSamples/ContactOwners.json";
         private const string TestJSONPath_InsufficientParameters = "../../sampleJSON/ContactOwnersSamples/ContactOwners_MissingPackageId.json";
         private const string TestJSONPath_ExtraParameters = "../../sampleJSON/ContactOwnersSamples/ContactOwners_ExtraParameter.json";
-        //private const string TestJSONPath_InvalidParameters = "ContactOwners_InvalidParams.json";
+        private const string TestJSONPath_InvalidBrand = "../../sampleJSON/ContactOwnersSamples/ContactOwners_InvalidBrand.json";
+        
         private const string fileStorageLocation = "../../Messages";
 
         [ClassInitialize]
@@ -109,24 +110,21 @@ namespace MessagingServiceTests
             JObject root = JObject.Parse(bodyContent);
 
             Assert.AreEqual("user1@gmail.com,user2@gmail.com,user3@gmail.com", root["to"]);
-            Assert.AreEqual("someuser@live.com", root["from"]);
+            Assert.AreEqual("support@powershellgallery.com", root["from"]);
             Assert.AreEqual("someuser@live.com", root["cc"]);
-            Assert.AreEqual("[PowerShellGallery] Message for owners of the module 'SomeTestPackage'", root["subject"]);
+            Assert.AreEqual("[PowerShell Gallery] Message for owners of the module 'SomeTestPackage'", root["subject"]);
             Assert.AreEqual(@"User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':
             
             Hello owners, I would like to be an owner too.  Please add me!
 
-    -----------------------------------------------
-    To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and 
-    [change your email notification settings](/profile/edit).", root["body"]["text"]);
+        To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and change your email notification settings: http://www.powershellgallery.com/profile/notifications.", root["body"]["text"]);
             Assert.AreEqual(@"User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':
             
             Hello owners, I would like to be an owner too.  Please add me!
 
     -----------------------------------------------
     <em>
-    To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and 
-    [change your email notification settings](/profile/edit).
+    To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and [change your email notification settings](http://www.powershellgallery.com/profile/notifications).
     </em>", root["body"]["html"]);
 
         }
@@ -189,36 +187,46 @@ namespace MessagingServiceTests
             JObject root = JObject.Parse(bodyContent);
 
             Assert.AreEqual("user1@gmail.com,user2@gmail.com,user3@gmail.com", root["to"]);
-            Assert.AreEqual("someuser@live.com", root["from"]);
+            Assert.AreEqual("support@powershellgallery.com", root["from"]);
             Assert.AreEqual("someuser@live.com", root["cc"]);
-            Assert.AreEqual("[PowerShellGallery] Message for owners of the module 'SomeTestPackage'", root["subject"]);
+            Assert.AreEqual("[PowerShell Gallery] Message for owners of the module 'SomeTestPackage'", root["subject"]);
             Assert.AreEqual(@"User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':
             
             Hello owners, I would like to be an owner too.  Please add me!
 
-    -----------------------------------------------
-    To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and 
-    [change your email notification settings](/profile/edit).", root["body"]["text"]);
+        To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and change your email notification settings: http://www.powershellgallery.com/profile/notifications.", root["body"]["text"]);
             Assert.AreEqual(@"User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':
             
             Hello owners, I would like to be an owner too.  Please add me!
 
     -----------------------------------------------
     <em>
-    To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and 
-    [change your email notification settings](/profile/edit).
+    To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and [change your email notification settings](http://www.powershellgallery.com/profile/notifications).
     </em>", root["body"]["html"]);
 
         }
 
 
-        /*
+        
         [TestMethod]
-        public void TestContactOwners_InvalidParameters()
+        public async Task TestContactOwners_InvalidBrand()
         {
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidBrand);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/contactOwners", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("ContactOwners FAIL: FakeBrand is not a valid brand.  Options:  NuGet, PowerShellGallery", errorsJSON["description"]);
             
         }
-        */
+        
         /*
         [TestMethod]
         public void TestContactOwners_AADConnectionFailed()

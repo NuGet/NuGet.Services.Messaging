@@ -22,11 +22,17 @@ namespace NuGet.Services.Messaging
         static string appKey = ConfigurationManager.AppSettings["ida:AppKey"];
         static string tenant = ConfigurationManager.AppSettings["ida:Tenant"];
         private static string[] _brandsOptions = { "NuGet", "PowerShellGallery" };
+        private static string[] _credentialTypes = { "APIKey", "password", "MSAccount" };
 
 
         public static string[] BrandsOptions()
         {
             return _brandsOptions;
+        }
+
+        public static string[] CredentialTypes()
+        {
+            return _credentialTypes;
         }
 
 

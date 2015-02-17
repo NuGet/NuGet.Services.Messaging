@@ -26,7 +26,9 @@ namespace MessagingServiceTests
         private const string TestJSONPath = "../../sampleJSON/ResetPasswordInstructionsSamples/ResetPasswordInstructions.json";
         private const string TestJSONPath_InsufficientParameters = "../../sampleJSON/ResetPasswordInstructionsSamples/ResetPasswordInstructions_MissingAction.json";
         private const string TestJSONPath_ExtraParameters = "../../sampleJSON/ResetPasswordInstructionsSamples/ResetPasswordInstructions_ExtraParameter.json";
-        //private const string TestJSONPath_InvalidParameters = "ResetPasswordInstructions_InvalidParams.json";
+        private const string TestJSONPath_InvalidBrand = "../../sampleJSON/ResetPasswordInstructionsSamples/ResetPasswordInstructions_InvalidBrand.json";
+        private const string TestJSONPath_InvalidAction = "../../sampleJSON/ResetPasswordInstructionsSamples/ResetPasswordInstructions_InvalidAction.json";
+        
         private const string fileStorageLocation = "../../Messages";
 
 
@@ -111,21 +113,21 @@ namespace MessagingServiceTests
             Assert.AreEqual(@"The word on the street is you lost your password. Sorry to hear it!
 If you haven't forgotten your password you can safely ignore this email. Your password has not been changed.
 
-Click the following link within the next 5 hours to reset your password:
+Click the following link within the next 12 hours to reset your password:
 
-profile/password/reset
+http://www.nuget.org/profile/password/reset
 
 Thanks,
-The NuGet Team", root["body"]["text"]);
+The NuGet Gallery Team", root["body"]["text"]);
             Assert.AreEqual(@"The word on the street is you lost your password. Sorry to hear it!
 If you haven't forgotten your password you can safely ignore this email. Your password has not been changed.
 
-Click the following link within the next 5 hours to reset your password:
+Click the following link within the next 12 hours to reset your password:
 
-[Reset Password](profile/password/reset)
+[Reset Password](http://www.nuget.org/profile/password/reset)
 
 Thanks,
-The NuGet Team", root["body"]["html"]);
+The NuGet Gallery Team", root["body"]["html"]);
 
         }
 
@@ -183,31 +185,63 @@ The NuGet Team", root["body"]["html"]);
             Assert.AreEqual(@"The word on the street is you lost your password. Sorry to hear it!
 If you haven't forgotten your password you can safely ignore this email. Your password has not been changed.
 
-Click the following link within the next 5 hours to reset your password:
+Click the following link within the next 12 hours to reset your password:
 
-profile/password/reset
+http://www.nuget.org/profile/password/reset
 
 Thanks,
-The NuGet Team", root["body"]["text"]);
+The NuGet Gallery Team", root["body"]["text"]);
             Assert.AreEqual(@"The word on the street is you lost your password. Sorry to hear it!
 If you haven't forgotten your password you can safely ignore this email. Your password has not been changed.
 
-Click the following link within the next 5 hours to reset your password:
+Click the following link within the next 12 hours to reset your password:
 
-[Reset Password](profile/password/reset)
+[Reset Password](http://www.nuget.org/profile/password/reset)
 
 Thanks,
-The NuGet Team", root["body"]["html"]);
+The NuGet Gallery Team", root["body"]["html"]);
 
         }
 
-        /*
+        
         [TestMethod]
-        public void TestResetPasswordInstructions_InvalidParameters()
+        public async Task TestResetPasswordInstructions_InvalidBrand()
         {
-             
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidBrand);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/resetPasswordInstructions", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("ResetPasswordInstructions FAIL: FakeBrand is not a valid brand.  Options:  NuGet", errorsJSON["description"]);
+            
         }
-        */
+
+        [TestMethod]
+        public async Task TestResetPasswordInstructions_InvalidAction()
+        {
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidAction);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/resetPasswordInstructions", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("ResetPasswordInstructions FAIL: fakeAction is not a valid action.", errorsJSON["description"]);
+            
+        }
+
         /*
         [TestMethod]
         public void TestResetPasswordInstructions_AADConnectionFailed()

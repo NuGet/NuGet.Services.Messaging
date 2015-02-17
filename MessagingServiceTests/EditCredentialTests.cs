@@ -26,7 +26,10 @@ namespace MessagingServiceTests
         private const string TestJSONPath = "../../sampleJSON/EditCredentialSamples/EditCredential.json";
         private const string TestJSONPath_InsufficientParameters = "../../sampleJSON/EditCredentialSamples/EditCredential_MissingUsername.json";
         private const string TestJSONPath_ExtraParameters = "../../sampleJSON/EditCredentialSamples/EditCredential_ExtraParameter.json";
-        //private const string TestJSONPath_InvalidParameters = "EditCredential_InvalidParams.json";
+        private const string TestJSONPath_InvalidBrand = "../../sampleJSON/EditCredentialSamples/EditCredential_InvalidBrand.json";
+        private const string TestJSONPath_InvalidAction = "../../sampleJSON/EditCredentialSamples/EditCredential_InvalidAction.json";
+        private const string TestJSONPath_InvalidType = "../../sampleJSON/EditCredentialSamples/EditCredential_InvalidType.json";
+
         private const string fileStorageLocation = "../../Messages";
 
 
@@ -107,9 +110,9 @@ namespace MessagingServiceTests
 
             Assert.AreEqual("someuser@live.com", root["to"]);
             Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("[NuGet Gallery] Some credential? added to your account", root["subject"]);
-            Assert.AreEqual("A Some credential? was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["text"]);
-            Assert.AreEqual("A Some credential? was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["html"]);
+            Assert.AreEqual("[NuGet Gallery] MSAccount added to your account", root["subject"]);
+            Assert.AreEqual("A MSAccount was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["text"]);
+            Assert.AreEqual("A MSAccount was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["html"]);
 
         }
 
@@ -163,19 +166,73 @@ namespace MessagingServiceTests
 
             Assert.AreEqual("someuser@live.com", root["to"]);
             Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("[NuGet Gallery] Some credential? added to your account", root["subject"]);
-            Assert.AreEqual("A Some credential? was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["text"]);
-            Assert.AreEqual("A Some credential? was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["html"]);
+            Assert.AreEqual("[NuGet Gallery] MSAccount added to your account", root["subject"]);
+            Assert.AreEqual("A MSAccount was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["text"]);
+            Assert.AreEqual("A MSAccount was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["html"]);
 
         }
 
-        /*
+        
         [TestMethod]
-        public void TestEditCredential_InvalidParameters()
+        public async Task TestEditCredential_InvalidBrand()
         {
-             
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidBrand);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/editCredential", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("EditCredential FAIL: FakeBrand is not a valid brand.  Options:  NuGet", errorsJSON["description"]);
+            
         }
-        */
+
+        [TestMethod]
+        public async Task TestEditCredential_InvalidAction()
+        {
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidAction);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/editCredential", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("EditCredential FAIL: get is not a valid action.  Options:  add, remove", errorsJSON["description"]);
+            
+            
+        }
+
+        [TestMethod]
+        public async Task TestEditCredential_InvalidType()
+        {
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidType);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/editCredential", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("EditCredential FAIL: account is not a valid type.  Options:  APIKey, password, MSAccount", errorsJSON["description"]);
+            
+            
+        }
+
+
         /*
         [TestMethod]
         public void TestEditCredential_AADConnectionFailed()

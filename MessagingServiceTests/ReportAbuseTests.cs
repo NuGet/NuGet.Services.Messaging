@@ -26,7 +26,10 @@ namespace MessagingServiceTests
         private const string TestJSONPath = "../../sampleJSON/ReportAbuseSamples/ReportAbuse.json";
         private const string TestJSONPath_InsufficientParameters = "../../sampleJSON/ReportAbuseSamples/ReportAbuse_MissingPackageId.json";
         private const string TestJSONPath_ExtraParameters = "../../sampleJSON/ReportAbuseSamples/ReportAbuse_ExtraParameter.json";
-        //private const string TestJSONPath_InvalidParameters = "ReportAbuse_InvalidParams.json";
+        private const string TestJSONPath_InvalidBrand = "../../sampleJSON/ReportAbuseSamples/ReportAbuse_InvalidBrand.json";
+        private const string TestJSONPath_InvalidOwnersContacted = "../../sampleJSON/ReportAbuseSamples/ReportAbuse_InvalidOwnersContacted.json";
+        private const string TestJSONPath_InvalidFromAddress = "../../sampleJSON/ReportAbuseSamples/ReportAbuse_InvalidEmail.json";
+        
         private const string fileStorageLocation = "../../Messages";
 
 
@@ -106,32 +109,32 @@ namespace MessagingServiceTests
             JObject root = JObject.Parse(bodyContent);
 
             Assert.AreEqual("support@powershellgallery.com", root["to"]);
-            Assert.AreEqual("rebro-somewhere@live.com", root["from"]);
-            Assert.AreEqual("rebro-somewhere@live.com", root["cc"]);
-            Assert.AreEqual("[PowerShellGallery] Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package has a bug in it.)", root["subject"]);
-            Assert.AreEqual(@"**Email:** rebro-1 (rebro-somewhere@live.com)
+            Assert.AreEqual("someuser@live.com", root["from"]);
+            Assert.AreEqual("someuser@live.com", root["cc"]);
+            Assert.AreEqual("[PowerShell Gallery] Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package has a bug in it.)", root["subject"]);
+            Assert.AreEqual(@"Email: rebro-1 (someuser@live.com)
 
-**Module:** SomeTestPackage
-http://www.powershellgallery.com/packages/SomeTestPackage
+Module: SomeTestPackage
+http://www.powershellgallery.com/modules/SomeTestPackage
 
-**Version:** 1.0.0
-http://www.powershellgallery.com/packages/SomeTestPackage/1.0.0
+Version: 1.0.0
+http://www.powershellgallery.com/modules/SomeTestPackage/1.0.0
 
-**Reason:**
+Reason:
 This package has a bug in it.
 
-**Has the package owner been contacted?:**
+Has the package owner been contacted?:
 Yes
 
-**Message:**
+Message:
 Please remove this package right away, it is terrible!", root["body"]["text"]);
-            Assert.AreEqual(@"**Email:** rebro-1 (rebro-somewhere@live.com)
+            Assert.AreEqual(@"**Email:** rebro-1 (someuser@live.com)
 
 **Module:** SomeTestPackage
-http://www.powershellgallery.com/packages/SomeTestPackage
+http://www.powershellgallery.com/modules/SomeTestPackage
 
 **Version:** 1.0.0
-http://www.powershellgallery.com/packages/SomeTestPackage/1.0.0
+http://www.powershellgallery.com/modules/SomeTestPackage/1.0.0
 
 **Reason:**
 This package has a bug in it.
@@ -194,32 +197,32 @@ Please remove this package right away, it is terrible!", root["body"]["html"]);
             JObject root = JObject.Parse(bodyContent);
 
             Assert.AreEqual("support@powershellgallery.com", root["to"]);
-            Assert.AreEqual("rebro-somewhere@live.com", root["from"]);
-            Assert.AreEqual("rebro-somewhere@live.com", root["cc"]);
-            Assert.AreEqual("[PowerShellGallery] Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package has a bug in it.)", root["subject"]);
-            Assert.AreEqual(@"**Email:** rebro-1 (rebro-somewhere@live.com)
+            Assert.AreEqual("someuser@live.com", root["from"]);
+            Assert.AreEqual("someuser@live.com", root["cc"]);
+            Assert.AreEqual("[PowerShell Gallery] Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package has a bug in it.)", root["subject"]);
+            Assert.AreEqual(@"Email: rebro-1 (someuser@live.com)
 
-**Module:** SomeTestPackage
-http://www.powershellgallery.com/packages/SomeTestPackage
+Module: SomeTestPackage
+http://www.powershellgallery.com/modules/SomeTestPackage
 
-**Version:** 1.0.0
-http://www.powershellgallery.com/packages/SomeTestPackage/1.0.0
+Version: 1.0.0
+http://www.powershellgallery.com/modules/SomeTestPackage/1.0.0
 
-**Reason:**
+Reason:
 This package has a bug in it.
 
-**Has the package owner been contacted?:**
+Has the package owner been contacted?:
 Yes
 
-**Message:**
+Message:
 Please remove this package right away, it is terrible!", root["body"]["text"]);
-            Assert.AreEqual(@"**Email:** rebro-1 (rebro-somewhere@live.com)
+            Assert.AreEqual(@"**Email:** rebro-1 (someuser@live.com)
 
 **Module:** SomeTestPackage
-http://www.powershellgallery.com/packages/SomeTestPackage
+http://www.powershellgallery.com/modules/SomeTestPackage
 
 **Version:** 1.0.0
-http://www.powershellgallery.com/packages/SomeTestPackage/1.0.0
+http://www.powershellgallery.com/modules/SomeTestPackage/1.0.0
 
 **Reason:**
 This package has a bug in it.
@@ -232,10 +235,62 @@ Please remove this package right away, it is terrible!", root["body"]["html"]);
 
         }
 
+        
+        [TestMethod]
+        public async Task TestReportAbuse_InvalidBrand()
+        {
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidBrand);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/reportAbuse", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("ReportAbuse FAIL: FakeBrand is not a valid brand.  Options:  NuGet, PowerShellGallery", errorsJSON["description"]);
+            
+        }
+
+        [TestMethod]
+        public async Task TestReportAbuse_InvalidOwnersContacted()
+        {
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidOwnersContacted);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/reportAbuse", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("ReportAbuse FAIL: Try ContactOwners first.", errorsJSON["description"]);
+            
+        }
+
         /*
         [TestMethod]
-        public void TestReportAbuse_InvalidParameters()
+        public void TestReportAbuse_InvalidFromAddress()
         {
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidFromAddress);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/reportAbuse", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("ReportAbuse FAIL: Insufficient parameters.", errorsJSON["description"]);
             
         }
         */

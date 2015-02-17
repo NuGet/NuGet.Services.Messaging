@@ -26,7 +26,9 @@ namespace MessagingServiceTests
         private const string TestJSONPath = "../../sampleJSON/NewAccountWelcomeSamples/NewAccountWelcome.json";
         private const string TestJSONPath_InsufficientParameters = "../../sampleJSON/NewAccountWelcomeSamples/NewAccountWelcome_MissingEmail.json";
         private const string TestJSONPath_ExtraParameters = "../../sampleJSON/NewAccountWelcomeSamples/NewAccountWelcome_ExtraParameter.json";
-        //private const string TestJSONPath_InvalidParameters = "NewAccountWelcome_InvalidParams.json";
+        private const string TestJSONPath_InvalidBrand = "../../sampleJSON/NewAccountWelcomeSamples/NewAccountWelcome_InvalidBrand.json";
+        private const string TestJSONPath_InvalidEmail = "../../sampleJSON/NewAccountWelcomeSamples/NewAccountWelcome_InvalidEmail.json";
+
         private const string fileStorageLocation = "../../Messages";
 
 
@@ -113,19 +115,19 @@ We can't wait to see what packages you'll upload.
 
 So we can be sure to contact you, please verify your email address and click the following link:
 
-/profile/email/verify
+http://www.nuget.org/profile/email/verify
 
 Thanks,
-The NuGet Team", root["body"]["text"]);
+The NuGet Gallery Team", root["body"]["text"]);
             Assert.AreEqual(@"Thank you for registering with the NuGet Gallery. 
 We can't wait to see what packages you'll upload.
 
 So we can be sure to contact you, please verify your email address and click the following link:
 
-/profile/email/verify
+[Verify Email](http://www.nuget.org/profile/email/verify)
 
 Thanks,
-The NuGet Team", root["body"]["html"]);
+The NuGet Gallery Team", root["body"]["html"]);
 
         }
 
@@ -185,29 +187,63 @@ We can't wait to see what packages you'll upload.
 
 So we can be sure to contact you, please verify your email address and click the following link:
 
-/profile/email/verify
+http://www.nuget.org/profile/email/verify
 
 Thanks,
-The NuGet Team", root["body"]["text"]);
+The NuGet Gallery Team", root["body"]["text"]);
             Assert.AreEqual(@"Thank you for registering with the NuGet Gallery. 
 We can't wait to see what packages you'll upload.
 
 So we can be sure to contact you, please verify your email address and click the following link:
 
-/profile/email/verify
+[Verify Email](http://www.nuget.org/profile/email/verify)
 
 Thanks,
-The NuGet Team", root["body"]["html"]);
+The NuGet Gallery Team", root["body"]["html"]);
 
+        }
+
+        
+        [TestMethod]
+        public async Task TestNewAccountWelcome_InvalidBrand()
+        {
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidBrand);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/newAccountWelcome", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("NewAccountWelcome FAIL: FakeBrand is not a valid brand.  Options:  NuGet", errorsJSON["description"]);
+            
         }
 
         /*
         [TestMethod]
-        public void TestNewAccountWelcome_InvalidParameters()
+        public void TestNewAccountWelcome_InvalidEmail()
         {
-             
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidEmail);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/reportAbuse", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("ReportAbuse FAIL: Insufficient parameters.", errorsJSON["description"]);
+            
         }
         */
+
         /*
         [TestMethod]
         public void TestNewAccountWelcome_AADConnectionFailed()

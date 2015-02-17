@@ -58,12 +58,12 @@ namespace NuGet.Services.Messaging
             
 
             IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
-
             if (brandValues == null)
             {
                 JObject errorObject = new JObject();
+                string brandOptions = string.Join(", ", ServiceHelper.BrandsOptions());
                 errorObject.Add("error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("description", "ContactOwners FAIL: "+brand+" is not a valid brand.  Options:  "+ServiceHelper.BrandsOptions());
+                errorObject.Add("description", "ContactOwners FAIL: " + brand + " is not a valid brand.  Options:  " + brandOptions);
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
@@ -120,7 +120,7 @@ namespace NuGet.Services.Messaging
             // compose JSON
             JObject emailJSON = new JObject();
             emailJSON.Add("to", ownersAddresses);
-            emailJSON.Add("from", fromUserAddress);
+            emailJSON.Add("from", brandValues.SupportTeamEmail);
             if (copyMe)
             {
                 emailJSON.Add("cc",fromUserAddress);
@@ -154,7 +154,6 @@ namespace NuGet.Services.Messaging
             }
 
         }
-
 
         /// <summary>
         /// Create and format ReportAbuse email, and then store it in an Azure Storage Blob.
@@ -226,8 +225,9 @@ namespace NuGet.Services.Messaging
             if (brandValues == null)
             {
                 JObject errorObject = new JObject();
+                string brandOptions = string.Join(", ", ServiceHelper.BrandsOptions());
                 errorObject.Add("error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("description", "ReportAbuse FAIL: "+brand+" is not a valid brand.  Options:  "+ServiceHelper.BrandsOptions());
+                errorObject.Add("description", "ReportAbuse FAIL: "+brand+" is not a valid brand.  Options:  "+brandOptions);
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
@@ -236,11 +236,10 @@ namespace NuGet.Services.Messaging
 
 
 
+            string packageURL = String.Format(CultureInfo.CurrentCulture, brandValues.EntityURL, packageId);
+            string versionURL = String.Format(CultureInfo.CurrentCulture, brandValues.EntityVersionURL, packageId, packageVersion);
 
-            string packageURL = brandValues.SiteRoot + "/packages/" + packageId;
-            string versionURL = packageURL + "/" + packageVersion;
-
-            if (String.IsNullOrEmpty(fromAddress))
+            if (!String.IsNullOrEmpty(fromUsername))
             {
                 fromAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
             }
@@ -361,16 +360,17 @@ namespace NuGet.Services.Messaging
             if (brandValues == null)
             {
                 JObject errorObject = new JObject();
+                string brandOptions = string.Join(", ", ServiceHelper.BrandsOptions());
                 errorObject.Add("error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("description", "ContactSupport FAIL: " + brand + " is not a valid brand.  Options:  " + ServiceHelper.BrandsOptions());
+                errorObject.Add("description", "ContactSupport FAIL: " + brand + " is not a valid brand.  Options:  " + brandOptions);
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
- 
-            string packageURL = brandValues.SiteRoot + "/packages/" + packageId;
-            string versionURL = packageURL + "/" + packageVersion;
+
+            string packageURL = String.Format(CultureInfo.CurrentCulture, brandValues.EntityURL, packageId);
+            string versionURL = String.Format(CultureInfo.CurrentCulture, brandValues.EntityVersionURL, packageId, packageVersion); 
             string fromAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
 
             
@@ -488,8 +488,9 @@ namespace NuGet.Services.Messaging
             if (brandValues == null)
             {
                 JObject errorObject = new JObject();
+                string brandOptions = string.Join(", ", ServiceHelper.BrandsOptions());
                 errorObject.Add("error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("description", "InvitePackageOwner FAIL: " + brand + " is not a valid brand.  Options:  " + ServiceHelper.BrandsOptions());
+                errorObject.Add("description", "InvitePackageOwner FAIL: " + brand + " is not a valid brand.  Options:  " + brandOptions);
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
@@ -498,7 +499,7 @@ namespace NuGet.Services.Messaging
 
 
             string toAddress = await ServiceHelper.GetUserEmailAddressFromUsername(toUsername);
-            string fromAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
+            string confirmURL = String.Format(CultureInfo.CurrentCulture, brandValues.ConfirmPackageOwnershipInviteURL, packageId);
 
             string subject = String.Format(
                 CultureInfo.CurrentCulture, 
@@ -510,20 +511,20 @@ namespace NuGet.Services.Messaging
                 brandValues.InvitePackageOwner_EmailBody_Text,
                 fromUsername,
                 packageId,
-                brandValues.ConfirmPackageOwnershipInviteURL);
+                confirmURL);
             string bodyHTML = String.Format(
                 CultureInfo.CurrentCulture,
                 brandValues.InvitePackageOwner_EmailBody_HTML,
                 fromUsername,
                 packageId,
-                brandValues.ConfirmPackageOwnershipInviteURL);
+                confirmURL);
 
 
 
             // compose JSON
             JObject emailJSON = new JObject();
             emailJSON.Add("to", toAddress);
-            emailJSON.Add("from", fromAddress);
+            emailJSON.Add("from", brandValues.SupportTeamEmail);
             emailJSON.Add("subject", subject);
             JObject body = new JObject();
             body.Add("text", bodyText);
@@ -634,15 +635,13 @@ namespace NuGet.Services.Messaging
             {
                 JObject errorObject = new JObject();
                 errorObject.Add("error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("description", "NewAccountWelcome FAIL: " + brand + " is not a valid brand.  Options:  " + ServiceHelper.BrandsOptions());
+                errorObject.Add("description", "NewAccountWelcome FAIL: " + brand + " is not a valid brand.  Options:  NuGet");
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
                 return;
             }
 
-
-            string fromAddress = brandValues.SupportTeamEmail;
 
             string subject = String.Format(
                 CultureInfo.CurrentCulture,
@@ -661,7 +660,7 @@ namespace NuGet.Services.Messaging
             // compose JSON
             JObject emailJSON = new JObject();
             emailJSON.Add("to", toAddress);
-            emailJSON.Add("from", fromAddress);
+            emailJSON.Add("from", brandValues.SupportTeamEmail);
             emailJSON.Add("subject", subject);
             JObject body = new JObject();
             body.Add("text", bodyText);
@@ -739,7 +738,7 @@ namespace NuGet.Services.Messaging
             {
                 JObject errorObject = new JObject();
                 errorObject.Add("error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("description", "ChangeEmailNotice FAIL: " + brand + " is not a valid brand.  Options:  " + ServiceHelper.BrandsOptions());
+                errorObject.Add("description", "ChangeEmailNotice FAIL: " + brand + " is not a valid brand.  Options:  NuGet");
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
@@ -888,7 +887,7 @@ namespace NuGet.Services.Messaging
             {
                 JObject errorObject = new JObject();
                 errorObject.Add("error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("description", "ResetPasswordInstructions FAIL: " + brand + " is not a valid brand.  Options:  " + ServiceHelper.BrandsOptions());
+                errorObject.Add("description", "ResetPasswordInstructions FAIL: " + brand + " is not a valid brand.  Options:  NuGet");
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
@@ -898,7 +897,6 @@ namespace NuGet.Services.Messaging
 
 
             string toAddress = await ServiceHelper.GetUserEmailAddressFromUsername(username);
-            string fromAddress = brandValues.SupportTeamEmail;
 
 
 
@@ -942,7 +940,7 @@ namespace NuGet.Services.Messaging
             {
                 JObject errorObject = new JObject();
                 errorObject.Add("error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("description", "ResetPasswordInstructions FAIL: 'action' was not a valid option.");
+                errorObject.Add("description", "ResetPasswordInstructions FAIL: "+action+" is not a valid action.");
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
@@ -955,7 +953,7 @@ namespace NuGet.Services.Messaging
             // compose JSON
             JObject emailJSON = new JObject();
             emailJSON.Add("to", toAddress);
-            emailJSON.Add("from", fromAddress);
+            emailJSON.Add("from", brandValues.SupportTeamEmail);
             emailJSON.Add("subject", subject);
             JObject body = new JObject();
             body.Add("text", bodyText);
@@ -1002,7 +1000,7 @@ namespace NuGet.Services.Messaging
 
 
             // verify parameters
-            String[] requiredParams = { "username", "action", "brand" };
+            String[] requiredParams = { "username", "action", "type", "brand" };
             List<string> missingParams = ServiceHelper.VerifyRequiredParameters(root, requiredParams);
             if (missingParams.Count > 0)
             {
@@ -1021,11 +1019,22 @@ namespace NuGet.Services.Messaging
             // pull data
             string username = root.Value<string>("username");
             string action = root.Value<string>("action");
+            string type = root.Value<string>("type");
             string brand = root.Value<string>("brand");
 
 
             // TODO:  validate parameters
-
+            if (!(type.Equals("APIKey") || type.Equals("password") || type.Equals("MSAccount")))
+            {
+                JObject errorObject = new JObject();
+                string credentialOptions = string.Join(", ", ServiceHelper.CredentialTypes());
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "EditCredential FAIL: "+type+" is not a valid type.  Options:  " + credentialOptions);
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                await context.Response.WriteAsync(errorObject.ToString());
+                return;
+            }
 
 
             // Always use NuGet constants, email only sent for NuGet users
@@ -1034,7 +1043,7 @@ namespace NuGet.Services.Messaging
             {
                 JObject errorObject = new JObject();
                 errorObject.Add("error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("description", "EditCredential FAIL: " + brand + " is not a valid brand.  Options:  " + ServiceHelper.BrandsOptions());
+                errorObject.Add("description", "EditCredential FAIL: " + brand + " is not a valid brand.  Options:  NuGet");
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
@@ -1044,7 +1053,6 @@ namespace NuGet.Services.Messaging
 
 
             string toAddress = await ServiceHelper.GetUserEmailAddressFromUsername(username);
-            string fromAddress = brandValues.SupportTeamEmail;
 
 
 
@@ -1057,36 +1065,36 @@ namespace NuGet.Services.Messaging
                 subject = String.Format(
                     CultureInfo.CurrentCulture,
                     brandValues.EditCredential_add_EmailSubject,
-                    "Some credential?");
+                    type);
                 bodyText = String.Format(
                     CultureInfo.CurrentCulture,
                     brandValues.EditCredential_add_EmailBody_Text,
-                    "Some credential?");
+                    type);
                 bodyHTML = String.Format(
                     CultureInfo.CurrentCulture,
                     brandValues.EditCredential_add_EmailBody_HTML,
-                    "Some credential?");
+                    type);
             }
             else if (action.Equals("remove"))
             {
                 subject = String.Format(
                     CultureInfo.CurrentCulture,
                     brandValues.EditCredential_remove_EmailSubject,
-                    "Some credential?");
+                    type);
                 bodyText = String.Format(
                     CultureInfo.CurrentCulture,
                     brandValues.EditCredential_remove_EmailBody_Text,
-                    "Some credential?");
+                    type);
                 bodyHTML = String.Format(
                     CultureInfo.CurrentCulture,
                     brandValues.EditCredential_remove_EmailBody_HTML,
-                    "Some credential?");
+                    type);
             }
             else
             {
                 JObject errorObject = new JObject();
                 errorObject.Add("error", (int)HttpStatusCode.BadRequest);
-                errorObject.Add("description", "EditCredential FAIL: 'action' was not a valid option.");
+                errorObject.Add("description", "EditCredential FAIL: "+action+" is not a valid action.  Options:  add, remove");
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
@@ -1099,7 +1107,7 @@ namespace NuGet.Services.Messaging
             // compose JSON
             JObject emailJSON = new JObject();
             emailJSON.Add("to", toAddress);
-            emailJSON.Add("from", fromAddress);
+            emailJSON.Add("from", brandValues.SupportTeamEmail);
             emailJSON.Add("subject", subject);
             JObject body = new JObject();
             body.Add("text", bodyText);

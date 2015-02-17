@@ -11,46 +11,83 @@ namespace NuGet.Services.Messaging.Brand.PowerShellGallery
         private const string _brand = "PowerShell";
         private const string _entityName = "module";
         private const string _supportTeamEmail = "support@powershellgallery.com";
-        private const string _changeEmailNotificationsURL = "/profile/edit"; // TODO:  Get real path
-        private const string _confirmPackageOwnershipInviteURL = "/owners/confirm";  // TODO:  Get real path
+        private const string _moduleURL = _siteRoot + "/modules/{0}";
+        private const string _moduleVersionURL = _moduleURL + "/{1}";
+        private const string _changeEmailNotificationsURL = _siteRoot+"/profile/notifications";
+        private const string _confirmPackageOwnershipInviteURL = _moduleURL + "/owners/confirm";
+
+
+        public string SiteRoot
+        {
+            get { return _siteRoot; }
+        }
+        public string Brand
+        {
+            get { return _brand; }
+        }
+        public string EntityName
+        {
+            get { return _entityName; }
+        }
+        public string SupportTeamEmail
+        {
+            get { return _supportTeamEmail; }
+        }
+        public string EntityURL
+        {
+            get { return _moduleURL; }
+        }
+        public string EntityVersionURL
+        {
+            get { return _moduleVersionURL; }
+        }
+        public string ChangeEmailNotificationsURL
+        {
+            get { return _changeEmailNotificationsURL; }
+        }
+        public string ConfirmPackageOwnershipInviteURL
+        {
+            get { return _confirmPackageOwnershipInviteURL; }
+        }
+
+
+
+
+
+
 
         
-
-        // TODO:  Get real email formats
-        private const string _contactOwners_EmailSubject = "[" + _brand + "Gallery] Message for owners of the module '{0}'";
+        private const string _contactOwners_EmailSubject = "[PowerShell Gallery] Message for owners of the module '{0}'";
         private const string _contactOwners_EmailBody_Text = @"User {0} &lt;{1}&gt; sends the following message to the owners of module '{2}':
             
             {3}
 
-    -----------------------------------------------
-    To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and 
-    [change your email notification settings]({4}).";
+        To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and change your email notification settings: {4}.";
         private const string _contactOwners_EmailBody_HTML = @"User {0} &lt;{1}&gt; sends the following message to the owners of module '{2}':
             
             {3}
 
     -----------------------------------------------
     <em>
-    To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and 
-    [change your email notification settings]({4}).
+    To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and [change your email notification settings]({4}).
     </em>";
 
-        private const string _reportAbuse_EmailSubject = "[" + _brand + "Gallery] Support Request for '{0}' version {1} (Reason: {2})";
-        private const string _reportAbuse_EmailBody_Text = @"**Email:** {0} ({1})
+        private const string _reportAbuse_EmailSubject = "[PowerShell Gallery] Support Request for '{0}' version {1} (Reason: {2})";
+        private const string _reportAbuse_EmailBody_Text = @"Email: {0} ({1})
 
-**Module:** {2}
+Module: {2}
 {3}
 
-**Version:** {4}
+Version: {4}
 {5}
 
-**Reason:**
+Reason:
 {6}
 
-**Has the package owner been contacted?:**
+Has the package owner been contacted?:
 {7}
 
-**Message:**
+Message:
 {8}";
         private const string _reportAbuse_EmailBody_HTML = @"**Email:** {0} ({1})
 
@@ -69,19 +106,19 @@ namespace NuGet.Services.Messaging.Brand.PowerShellGallery
 **Message:**
 {8}";
 
-        private const string _contactSupport_EmailSubject = "["+_brand+"Gallery] Support Request for '{0}' version {1} (Reason: {2})";
-        private const string _contactSupport_EmailBody_Text = @"**Email:** {0} ({1})
+        private const string _contactSupport_EmailSubject = "[PowerShell Gallery] Support Request for '{0}' version {1} (Reason: {2})";
+        private const string _contactSupport_EmailBody_Text = @"Email: {0} ({1})
 
-**Module:** {2}
+Module: {2}
 {3}
 
-**Version:** {4}
+Version: {4}
 {5}
 
-**Reason:**
+Reason:
 {6}
 
-**Message:**
+Message:
 {7}";
         private const string _contactSupport_EmailBody_HTML = @"**Email:** {0} ({1})
 
@@ -97,13 +134,13 @@ namespace NuGet.Services.Messaging.Brand.PowerShellGallery
 **Message:**
 {7}";
 
-        private const string _invitePackageOwner_EmailSubject = "["+_brand+"Gallery] The user '{0}' wants to add you as an owner of the module '{1}'.";
+        private const string _invitePackageOwner_EmailSubject = "[PowerShell Gallery] The user '{0}' wants to add you as an owner of the module '{1}'.";
         private const string _invitePackageOwner_EmailBody_Text = @"The user '{0}' wants to add you as an owner of the module '{1}'. 
 If you do not want to be listed as an owner of this module, simply delete this email.
 
 To accept this request and become a listed owner of the module, click the following URL:
 
-[PowerShell Gallery]({2})
+{2}
 
 Thanks,
 The PowerShell Gallery Team";
@@ -112,7 +149,7 @@ If you do not want to be listed as an owner of this module, simply delete this e
 
 To accept this request and become a listed owner of the module, click the following URL:
 
-[PowerShell Gallery]({2})
+[Accept Ownership Invitation]({2})
 
 Thanks,
 The PowerShell Gallery Team";
@@ -121,30 +158,6 @@ The PowerShell Gallery Team";
 
 
 
-        public string SiteRoot
-        {
-            get { return _siteRoot; }
-        }
-        public string Brand
-        {
-            get { return _brand;  }
-        }
-        public string EntityName
-        {
-            get { return _entityName;  }
-        }
-        public string SupportTeamEmail
-        {
-            get { return _supportTeamEmail;  }
-        }
-        public string ChangeEmailNotificationsURL
-        {
-            get { return _changeEmailNotificationsURL;  }
-        }
-        public string ConfirmPackageOwnershipInviteURL
-        {
-            get { return _confirmPackageOwnershipInviteURL;  }
-        }
         public string ContactOwners_EmailSubject
         {
             get { return _contactOwners_EmailSubject; }

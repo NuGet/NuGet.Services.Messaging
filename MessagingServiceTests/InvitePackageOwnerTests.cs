@@ -27,7 +27,8 @@ namespace MessagingServiceTests
         private const string TestJSONPath = "../../sampleJSON/InvitePackageOwnerSamples/InvitePackageOwner.json";
         private const string TestJSONPath_InsufficientParameters = "../../sampleJSON/InvitePackageOwnerSamples/InvitePackageOwner_MissingPackageId.json";
         private const string TestJSONPath_ExtraParameters = "../../sampleJSON/InvitePackageOwnerSamples/InvitePackageOwner_ExtraParameter.json";
-        //private const string TestJSONPath_InvalidParameters = "InvitePackageOwner_InvalidParams.json";
+        private const string TestJSONPath_InvalidBrand = "../../sampleJSON/InvitePackageOwnerSamples/InvitePackageOwner_InvalidBrand.json";
+
         private const string fileStorageLocation = "../../Messages";
 
 
@@ -107,14 +108,14 @@ namespace MessagingServiceTests
             JObject root = JObject.Parse(bodyContent);
 
             Assert.AreEqual("someuser@live.com", root["to"]);
-            Assert.AreEqual("someuser@live.com", root["from"]);
-            Assert.AreEqual("[PowerShellGallery] The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
+            Assert.AreEqual("support@powershellgallery.com", root["from"]);
+            Assert.AreEqual("[PowerShell Gallery] The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
             Assert.AreEqual(@"The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'. 
 If you do not want to be listed as an owner of this module, simply delete this email.
 
 To accept this request and become a listed owner of the module, click the following URL:
 
-[PowerShell Gallery](/owners/confirm)
+http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm
 
 Thanks,
 The PowerShell Gallery Team", root["body"]["text"]);
@@ -123,7 +124,7 @@ If you do not want to be listed as an owner of this module, simply delete this e
 
 To accept this request and become a listed owner of the module, click the following URL:
 
-[PowerShell Gallery](/owners/confirm)
+[Accept Ownership Invitation](http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm)
 
 Thanks,
 The PowerShell Gallery Team", root["body"]["html"]);
@@ -179,14 +180,14 @@ The PowerShell Gallery Team", root["body"]["html"]);
             JObject root = JObject.Parse(bodyContent);
 
             Assert.AreEqual("someuser@live.com", root["to"]);
-            Assert.AreEqual("someuser@live.com", root["from"]);
-            Assert.AreEqual("[PowerShellGallery] The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
+            Assert.AreEqual("support@powershellgallery.com", root["from"]);
+            Assert.AreEqual("[PowerShell Gallery] The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
             Assert.AreEqual(@"The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'. 
 If you do not want to be listed as an owner of this module, simply delete this email.
 
 To accept this request and become a listed owner of the module, click the following URL:
 
-[PowerShell Gallery](/owners/confirm)
+http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm
 
 Thanks,
 The PowerShell Gallery Team", root["body"]["text"]);
@@ -195,20 +196,33 @@ If you do not want to be listed as an owner of this module, simply delete this e
 
 To accept this request and become a listed owner of the module, click the following URL:
 
-[PowerShell Gallery](/owners/confirm)
+[Accept Ownership Invitation](http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm)
 
 Thanks,
 The PowerShell Gallery Team", root["body"]["html"]);
 
         }
 
-        /*
+        
         [TestMethod]
-        public void TestInvitePackageOwner_InvalidParameters()
+        public async Task TestInvitePackageOwner_InvalidBrand()
         {
-             
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidBrand);
+            StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/invitePackageOwner", postContent);
+            Stream errors = response.Content.ReadAsStreamAsync().Result;
+
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+
+            StreamReader errorsReader = new StreamReader(errors);
+            string errorsString = errorsReader.ReadToEnd();
+            JObject errorsJSON = JObject.Parse(errorsString);
+
+            Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
+            Assert.AreEqual("InvitePackageOwner FAIL: FakeBrand is not a valid brand.  Options:  NuGet, PowerShellGallery", errorsJSON["description"]);
+            
         }
-        */
+        
         /*
         [TestMethod]
         public void TestInvitePackageOwner_AADConnectionFailed()
