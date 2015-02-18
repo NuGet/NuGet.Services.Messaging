@@ -29,7 +29,7 @@ namespace NuGet.Services.Messaging
 
         //  save
 
-        protected override async Task OnSave(Uri resourceUri, StorageContent content)
+        protected override Task OnSave(Uri resourceUri, StorageContent content)
         {
             
             TraceMethod("SAVE", resourceUri);
@@ -40,18 +40,18 @@ namespace NuGet.Services.Messaging
 
         //  load
 
-        protected override async Task<StorageContent> OnLoad(Uri resourceUri)
+        protected override Task<StorageContent> OnLoad(Uri resourceUri)
         {
             // not used
-            return new StringStorageContent("");
+            return Task.Run(() => { return (StorageContent)(new StringStorageContent("")); });
         }
 
         //  delete
 
-        protected override async Task OnDelete(Uri resourceUri)
+        protected override Task OnDelete(Uri resourceUri)
         {
             // not used
-            return;
+            return Task.Run(() => { return; }); ;
         }
     }
 }

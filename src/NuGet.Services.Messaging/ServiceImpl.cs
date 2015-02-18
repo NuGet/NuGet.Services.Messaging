@@ -132,10 +132,8 @@ namespace NuGet.Services.Messaging
             emailJSON.Add("body", body);
 
 
+            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), Guid.NewGuid().ToString());
 
-            // enqueue message
-            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), "email1");
-            
             if (result)
             {
                 context.Response.StatusCode = (int)HttpStatusCode.OK;
@@ -294,7 +292,7 @@ namespace NuGet.Services.Messaging
 
 
             // enqueue message
-            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), "email1");
+            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), Guid.NewGuid().ToString());
 
             if (result)
             {
@@ -423,7 +421,7 @@ namespace NuGet.Services.Messaging
 
             
             // enqueue message
-            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), "email1");
+            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), Guid.NewGuid().ToString());
             
             if (result)
             {
@@ -534,7 +532,7 @@ namespace NuGet.Services.Messaging
 
             
             // enqueue message
-            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), "email1");
+            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), Guid.NewGuid().ToString());
             
             if (result)
             {
@@ -553,9 +551,6 @@ namespace NuGet.Services.Messaging
                 return;
             }
         }
-
-        
-
 
         /// <summary>
         /// Obtain reasons for specified action, formatted using the brand's entity name.
@@ -585,8 +580,6 @@ namespace NuGet.Services.Messaging
             context.Response.Headers.Add("Cache-Control", new string[] { "no-cache" });
             return context.Response.WriteAsync(reasonsJSON.ToString());
         }
-
-
 
         /// <summary>
         /// Create and format NewAccountWelcome email, and then store it in an Azure Storage Blob.
@@ -670,7 +663,7 @@ namespace NuGet.Services.Messaging
 
 
             // enqueue message
-            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), "email1");
+            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), Guid.NewGuid().ToString());
 
             if (result)
             {
@@ -807,8 +800,8 @@ namespace NuGet.Services.Messaging
 
 
             // enqueue message
-            bool result_oldEmail = await storageManager.Save(new StringStorageContent(oldAddress_emailJSON.ToString(), "application/json"), "email1");
-            bool result_newEmail = await storageManager.Save(new StringStorageContent(newAddress_emailJSON.ToString(), "application/json"), "email2");
+            bool result_oldEmail = await storageManager.Save(new StringStorageContent(oldAddress_emailJSON.ToString(), "application/json"), Guid.NewGuid().ToString());
+            bool result_newEmail = await storageManager.Save(new StringStorageContent(newAddress_emailJSON.ToString(), "application/json"), Guid.NewGuid().ToString());
 
             if (result_oldEmail && result_newEmail)
             {
@@ -963,7 +956,7 @@ namespace NuGet.Services.Messaging
 
 
             // enqueue message
-            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), "email1");
+            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), Guid.NewGuid().ToString());
 
             if (result)
             {
@@ -1117,7 +1110,7 @@ namespace NuGet.Services.Messaging
 
 
             // enqueue message
-            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), "email1");
+            bool result = await storageManager.Save(new StringStorageContent(emailJSON.ToString(), "application/json"), Guid.NewGuid().ToString());
 
             if (result)
             {

@@ -16,11 +16,6 @@ namespace NuGet.Services.Messaging
     public static class ServiceHelper
     {
 
-        static string graphResourceId = ConfigurationManager.AppSettings["ida:GraphResourceId"];
-        static string aadInstance = ConfigurationManager.AppSettings["ida:AADInstance"];
-        static string clientId = ConfigurationManager.AppSettings["ida:ClientId"];
-        static string appKey = ConfigurationManager.AppSettings["ida:AppKey"];
-        static string tenant = ConfigurationManager.AppSettings["ida:Tenant"];
         private static string[] _brandsOptions = { "NuGet", "PowerShellGallery" };
         private static string[] _credentialTypes = { "APIKey", "password", "MSAccount" };
 
@@ -68,7 +63,7 @@ namespace NuGet.Services.Messaging
         }
 
 
-        
+        /*
         public static async Task<ActiveDirectoryClient> GetActiveDirectoryClient()
         {
             // Taken from NuGet.Services.Publish.ServiceHelpers.cs
@@ -88,9 +83,9 @@ namespace NuGet.Services.Messaging
 
             return activeDirectoryClient;
         }
+        */
 
-
-        public static async Task<string> GetUserEmailAddressFromUsername(string username)
+        public static Task<string> GetUserEmailAddressFromUsername(string username)
         {
             //ActiveDirectoryClient activeDirectoryClient = await GetActiveDirectoryClient();
             //IUser user = await activeDirectoryClient.Users.GetByObjectId(username).ExecuteAsync();
@@ -99,11 +94,11 @@ namespace NuGet.Services.Messaging
 
 
             // for now, return dummy values
-            return "someuser@live.com";
+            return Task<string>.Run(() => { return "someuser@live.com"; });
         }
 
         
-        public static async Task<List<string>> GetOwnerEmailAddressesFromPackageID(string packageID)
+        public static Task<List<string>> GetOwnerEmailAddressesFromPackageID(string packageID)
         {
             //ActiveDirectoryClient activeDirectoryClient = await GetActiveDirectoryClient();
             //IGroup package = await activeDirectoryClient.Groups.GetByObjectId(packageID).ExecuteAsync();
@@ -118,7 +113,7 @@ namespace NuGet.Services.Messaging
 
 
             // for now, return dummy values
-            return new List<string> { "user1@gmail.com", "user2@gmail.com", "user3@gmail.com" };
+            return Task<List<string>>.Run(() => { return new List<string> { "user1@gmail.com", "user2@gmail.com", "user3@gmail.com" }; });
 
         }
 
