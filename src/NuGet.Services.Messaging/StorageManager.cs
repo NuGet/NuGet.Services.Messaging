@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.Configuration;
+﻿using Microsoft.WindowsAzure.Storage;
 using NuGet.Services.Metadata.Catalog.Persistence;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
-using System.Threading.Tasks;
+using System;
+using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace NuGet.Services.Messaging
 {
@@ -33,22 +30,19 @@ namespace NuGet.Services.Messaging
 
 
         // File Storage
-        private static string _fileStorage = ConfigurationManager.AppSettings["Storage.Secondary"];
+        //private static string _fileStorage = ConfigurationManager.AppSettings["Storage.Secondary"];
         private static string _fileAddress = ConfigurationManager.AppSettings["Storage.Secondary.BaseAddress"];
         private static string _filePath = ConfigurationManager.AppSettings["Storage.Secondary.Path"];
         private static string _fileQueuePath = ConfigurationManager.AppSettings["Storage.Secondary.Queue"];
 
 
-
-        public StorageManager(Storage storage = null, string storageType = "file") 
-        { 
-            if (storage != null)
-            {
-                _storage = storage;
-                _storageType = storageType;
-            }
-
-            else if (!String.IsNullOrEmpty(_azureConnectionString))
+        
+        // Use config to determine storage
+        // Used in production
+        public StorageManager()
+        {
+            // Use Azure Storage
+            if (!String.IsNullOrEmpty(_azureConnectionString))
             {
                 _storageType = "azure";
                 // create azure storage
@@ -57,17 +51,50 @@ namespace NuGet.Services.Messaging
             }
             else
             {
+                // use File Storage and default values
                 _storageType = "file";
                 _storage = new FileStorage(_fileAddress, _filePath);
-                
-                // create file queue
-                if (!File.Exists(_fileQueuePath))
+            }
+
+            if (_storageType.Equals("file"))
+            {
+                InitializeFileQueue();
+            }
+        }
+
+
+
+        // Initialize with storage
+        // Used for tests
+        public StorageManager(Storage storage, string storageType = "file", string fileQueuePath = null) 
+        { 
+            // use passed storage by default
+            if (storage != null)
+            {
+                // passing in storage
+                _storage = storage;
+                _storageType = storageType;
+            }
+            if (fileQueuePath != null)
+            {
+                _fileQueuePath = fileQueuePath;
+            }
+            
+            if (_storageType.Equals("file"))
+            {
+                InitializeFileQueue();
+            }
+        }
+
+        private void InitializeFileQueue()
+        {
+            // create file queue
+            if (!File.Exists(_fileQueuePath))
+            {
+                using (StreamWriter sw = File.CreateText(_fileQueuePath))
                 {
-                    using (StreamWriter sw = File.CreateText(_fileQueuePath))
-                    {
-                        sw.WriteLineAsync("Queue");
-                        sw.WriteLineAsync("======");
-                    }
+                    sw.WriteLineAsync("Queue");
+                    sw.WriteLineAsync("======");
                 }
             }
         }
@@ -125,6 +152,42 @@ namespace NuGet.Services.Messaging
             }
             
             return true;
+        }
+
+
+        // delete all message files, and then delete the queue
+        public async Task DeleteAll()
+        {
+            if (File.Exists(_fileQueuePath))
+            {
+                using (StreamReader sr = File.OpenText(_fileQueuePath))
+                {
+                    string line = await sr.ReadLineAsync();
+                    while (line != null)
+                    {
+                        if (!(line.Equals("Queue") || line.Equals("======")))
+                        {
+                            // can't call Delete(line) because tries it to remove GUID from queue (which we already have open)
+                            // Instead, call _storage.Delete() directly.
+                            // no need to wait, can delete all in parallel (right?)
+                            _storage.Delete(new Uri(_storage.BaseAddress, line));
+
+                        }
+                        line = await sr.ReadLineAsync();
+                    }
+                }
+
+                // delete file queue
+                File.Delete(_fileQueuePath);
+            }
+        }
+
+        // Returns last GUID added to queue
+        public string GetLastContentName()
+        {
+            // get GUID from bottom of queue
+            string lastLine = File.ReadLines(_fileQueuePath).Last();
+            return lastLine;
         }
 
 

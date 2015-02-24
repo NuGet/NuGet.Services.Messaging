@@ -9,6 +9,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Configuration;
 
 namespace MessagingServiceTests
 {
@@ -30,14 +31,16 @@ namespace MessagingServiceTests
         private const string TestJSONPath_InsufficientParameters = "../../sampleJSON/ContactOwnersSamples/ContactOwners_MissingPackageId.json";
         private const string TestJSONPath_ExtraParameters = "../../sampleJSON/ContactOwnersSamples/ContactOwners_ExtraParameter.json";
         private const string TestJSONPath_InvalidBrand = "../../sampleJSON/ContactOwnersSamples/ContactOwners_InvalidBrand.json";
-        
-        private const string fileStorageLocation = "../../Messages";
+
+        private static string fileStorage_BaseAddress = ConfigurationManager.AppSettings["Storage.Secondary.BaseAddress"];
+        private static string fileStorage_Path = "../../Messages/ContactOwnersTests";
+        private static string fileStorage_Queue = "../../Messages/ContactOwnersTests/queue.txt";
 
         [ClassInitialize]
         public static void ClassInit(TestContext context)
         {
             // ensure uses file storage
-            _storageManager = new StorageManager(new FileStorage("http://localhost:8000/messages", fileStorageLocation));
+            _storageManager = new StorageManager(new FileStorage(fileStorage_BaseAddress, fileStorage_Path), "file", fileStorage_Queue);
             _server = TestServer.Create(app =>
             {
                 var startup = new Startup();
@@ -46,7 +49,7 @@ namespace MessagingServiceTests
             });
 
             // Inject connection failure to storage:  use fake storage.  Allows creation, but fails on save.
-            _storageManagerFake = new StorageManager(new FakeFileStorage("http://localhost:8000/messages", fileStorageLocation));
+            _storageManagerFake = new StorageManager(new FakeFileStorage(fileStorage_BaseAddress, fileStorage_Path), "fake");
             _server_noStorage = TestServer.Create(app =>
             {
                 var startup = new Startup();
@@ -67,18 +70,19 @@ namespace MessagingServiceTests
         }
 
         [ClassCleanup]
-        public static void ClassClean()
+        public static async void ClassClean()
         {
             _server.Dispose();
             _server_noStorage.Dispose();
+
+            await _storageManager.DeleteAll();
         }
 
 
         [TestCleanup]
-        public async void Cleanup()
+        public void Cleanup()
         {
-            // delete all contents of fileStorageLocation
-            bool result = await _storageManager.Delete("email1");
+            //await _storageManager.DeleteAll();
         }
 
 
@@ -104,28 +108,32 @@ namespace MessagingServiceTests
 
 
             // Check message
-            StreamStorageContent messageJSON = (StreamStorageContent)await _storageManager.Load("email1");
-            StreamReader reader = new StreamReader(messageJSON.GetContentStream());
-            string bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
+            string guid = _storageManager.GetLastContentName();
+            StorageContent messageContent = await _storageManager.Load(guid);
+            StreamReader reader = new StreamReader(messageContent.GetContentStream());
+            string content = await reader.ReadToEndAsync();
+            JObject root = JObject.Parse(content);
 
             Assert.AreEqual("user1@gmail.com,user2@gmail.com,user3@gmail.com", root["to"]);
             Assert.AreEqual("support@powershellgallery.com", root["from"]);
             Assert.AreEqual("someuser@live.com", root["cc"]);
-            Assert.AreEqual("[PowerShell Gallery] Message for owners of the module 'SomeTestPackage'", root["subject"]);
-            Assert.AreEqual(@"User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':
+            Assert.AreEqual("PowerShell Gallery: Message for owners of the module 'SomeTestPackage'", root["subject"]);
+            Assert.AreEqual(@"User rebro-1 <someuser@live.com> sends the following message to the owners of module 'SomeTestPackage':
             
             Hello owners, I would like to be an owner too.  Please add me!
 
         To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and change your email notification settings: http://www.powershellgallery.com/profile/notifications.", root["body"]["text"]);
-            Assert.AreEqual(@"User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':
-            
-            Hello owners, I would like to be an owner too.  Please add me!
-
-    -----------------------------------------------
+            Assert.AreEqual(@"
+<html>
+<body>
+    <p>User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':</p>
+    <p>Hello owners, I would like to be an owner too.  Please add me!</p>
     <em>
-    To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and [change your email notification settings](http://www.powershellgallery.com/profile/notifications).
-    </em>", root["body"]["html"]);
+        To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and 
+        <a href='http://www.powershellgallery.com/profile/notifications'>change your email notification settings</a>.
+    </em>
+</body>
+</html>", root["body"]["html"]);
 
         }
 
@@ -181,28 +189,32 @@ namespace MessagingServiceTests
 
 
             // Check message
-            StreamStorageContent messageJSON = (StreamStorageContent)await _storageManager.Load("email1");
-            StreamReader reader = new StreamReader(messageJSON.GetContentStream());
-            string bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
+            string guid = _storageManager.GetLastContentName();
+            StorageContent messageContent = await _storageManager.Load(guid);
+            StreamReader reader = new StreamReader(messageContent.GetContentStream());
+            string content = await reader.ReadToEndAsync();
+            JObject root = JObject.Parse(content);
 
             Assert.AreEqual("user1@gmail.com,user2@gmail.com,user3@gmail.com", root["to"]);
             Assert.AreEqual("support@powershellgallery.com", root["from"]);
             Assert.AreEqual("someuser@live.com", root["cc"]);
-            Assert.AreEqual("[PowerShell Gallery] Message for owners of the module 'SomeTestPackage'", root["subject"]);
-            Assert.AreEqual(@"User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':
+            Assert.AreEqual("PowerShell Gallery: Message for owners of the module 'SomeTestPackage'", root["subject"]);
+            Assert.AreEqual(@"User rebro-1 <someuser@live.com> sends the following message to the owners of module 'SomeTestPackage':
             
             Hello owners, I would like to be an owner too.  Please add me!
 
         To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and change your email notification settings: http://www.powershellgallery.com/profile/notifications.", root["body"]["text"]);
-            Assert.AreEqual(@"User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':
-            
-            Hello owners, I would like to be an owner too.  Please add me!
-
-    -----------------------------------------------
+            Assert.AreEqual(@"
+<html>
+<body>
+    <p>User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':</p>
+    <p>Hello owners, I would like to be an owner too.  Please add me!</p>
     <em>
-    To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and [change your email notification settings](http://www.powershellgallery.com/profile/notifications).
-    </em>", root["body"]["html"]);
+        To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and 
+        <a href='http://www.powershellgallery.com/profile/notifications'>change your email notification settings</a>.
+    </em>
+</body>
+</html>", root["body"]["html"]);
 
         }
 

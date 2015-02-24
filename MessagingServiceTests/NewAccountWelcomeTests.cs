@@ -9,6 +9,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Configuration;
 
 namespace MessagingServiceTests
 {
@@ -29,14 +30,16 @@ namespace MessagingServiceTests
         private const string TestJSONPath_InvalidBrand = "../../sampleJSON/NewAccountWelcomeSamples/NewAccountWelcome_InvalidBrand.json";
         private const string TestJSONPath_InvalidEmail = "../../sampleJSON/NewAccountWelcomeSamples/NewAccountWelcome_InvalidEmail.json";
 
-        private const string fileStorageLocation = "../../Messages";
+        private static string fileStorage_BaseAddress = ConfigurationManager.AppSettings["Storage.Secondary.BaseAddress"];
+        private static string fileStorage_Path = "../../Messages/NewAccountWelcomeTests";
+        private static string fileStorage_Queue = "../../Messages/NewAccountWelcomeTests/queue.txt";
 
 
         [ClassInitialize]
         public static void ClassInit(TestContext context)
         {
             // ensure uses file storage
-            _storageManager = new StorageManager(new FileStorage("http://localhost:8000/messages", fileStorageLocation));
+            _storageManager = new StorageManager(new FileStorage(fileStorage_BaseAddress, fileStorage_Path), "file", fileStorage_Queue);
             _server = TestServer.Create(app =>
             {
                 var startup = new Startup();
@@ -45,7 +48,7 @@ namespace MessagingServiceTests
             });
 
             // Inject connection failure to storage:  use fake storage.  Allows creation, but fails on save.
-            _storageManagerFake = new StorageManager(new FakeFileStorage("http://localhost:8000/messages", fileStorageLocation));
+            _storageManagerFake = new StorageManager(new FakeFileStorage(fileStorage_BaseAddress, fileStorage_Path), "fake");
             _server_noStorage = TestServer.Create(app =>
             {
                 var startup = new Startup();
@@ -66,17 +69,18 @@ namespace MessagingServiceTests
         }
 
         [ClassCleanup]
-        public static void ClassClean()
+        public static async void ClassClean()
         {
             _server.Dispose();
             _server_noStorage.Dispose();
+
+            await _storageManager.DeleteAll();
         }
 
         [TestCleanup]
-        public async void Cleanup()
+        public void Cleanup()
         {
-            // delete all contents of fileStorageLocation
-            bool result = await _storageManager.Delete("email1");
+            //await _storageManager.DeleteAll();
         }
 
 
@@ -102,16 +106,16 @@ namespace MessagingServiceTests
 
 
             // Check message
-            StreamStorageContent messageJSON = (StreamStorageContent)await _storageManager.Load("email1");
-            StreamReader reader = new StreamReader(messageJSON.GetContentStream());
-            string bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
+            string guid = _storageManager.GetLastContentName();
+            StorageContent messageContent = await _storageManager.Load(guid);
+            StreamReader reader = new StreamReader(messageContent.GetContentStream());
+            string content = await reader.ReadToEndAsync();
+            JObject root = JObject.Parse(content);
 
             Assert.AreEqual("Some_Email@live.com", root["to"]);
             Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("[NuGet Gallery] Please verify your account.", root["subject"]);
-            Assert.AreEqual(@"Thank you for registering with the NuGet Gallery. 
-We can't wait to see what packages you'll upload.
+            Assert.AreEqual("NuGet Gallery: Please verify your account.", root["subject"]);
+            Assert.AreEqual(@"Thank you for registering with the NuGet Gallery! We can't wait to see what packages you'll upload.
 
 So we can be sure to contact you, please verify your email address and click the following link:
 
@@ -119,15 +123,19 @@ http://www.nuget.org/profile/email/verify
 
 Thanks,
 The NuGet Gallery Team", root["body"]["text"]);
-            Assert.AreEqual(@"Thank you for registering with the NuGet Gallery. 
-We can't wait to see what packages you'll upload.
+            Assert.AreEqual(@"
+<html>
+<body>
+    <p>Thank you for registering with the NuGet Gallery! We can't wait to see what packages you'll upload.</p>
 
-So we can be sure to contact you, please verify your email address and click the following link:
+    <p>So we can be sure to contact you, please verify your email address and click the following link:</p>
+    <a href='http://www.nuget.org/profile/email/verify'>Verify Email</a>
 
-[Verify Email](http://www.nuget.org/profile/email/verify)
-
-Thanks,
-The NuGet Gallery Team", root["body"]["html"]);
+    <p>Thanks,<br>
+    The NuGet Gallery Team</p>
+    
+</body>
+</html>", root["body"]["html"]);
 
         }
 
@@ -174,16 +182,16 @@ The NuGet Gallery Team", root["body"]["html"]);
 
 
             // Check message
-            StreamStorageContent messageJSON = (StreamStorageContent)await _storageManager.Load("email1");
-            StreamReader reader = new StreamReader(messageJSON.GetContentStream());
-            string bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
+            string guid = _storageManager.GetLastContentName();
+            StorageContent messageContent = await _storageManager.Load(guid);
+            StreamReader reader = new StreamReader(messageContent.GetContentStream());
+            string content = await reader.ReadToEndAsync();
+            JObject root = JObject.Parse(content);
 
             Assert.AreEqual("Some_Email@live.com", root["to"]);
             Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("[NuGet Gallery] Please verify your account.", root["subject"]);
-            Assert.AreEqual(@"Thank you for registering with the NuGet Gallery. 
-We can't wait to see what packages you'll upload.
+            Assert.AreEqual("NuGet Gallery: Please verify your account.", root["subject"]);
+            Assert.AreEqual(@"Thank you for registering with the NuGet Gallery! We can't wait to see what packages you'll upload.
 
 So we can be sure to contact you, please verify your email address and click the following link:
 
@@ -191,15 +199,19 @@ http://www.nuget.org/profile/email/verify
 
 Thanks,
 The NuGet Gallery Team", root["body"]["text"]);
-            Assert.AreEqual(@"Thank you for registering with the NuGet Gallery. 
-We can't wait to see what packages you'll upload.
+            Assert.AreEqual(@"
+<html>
+<body>
+    <p>Thank you for registering with the NuGet Gallery! We can't wait to see what packages you'll upload.</p>
 
-So we can be sure to contact you, please verify your email address and click the following link:
+    <p>So we can be sure to contact you, please verify your email address and click the following link:</p>
+    <a href='http://www.nuget.org/profile/email/verify'>Verify Email</a>
 
-[Verify Email](http://www.nuget.org/profile/email/verify)
-
-Thanks,
-The NuGet Gallery Team", root["body"]["html"]);
+    <p>Thanks,<br>
+    The NuGet Gallery Team</p>
+    
+</body>
+</html>", root["body"]["html"]);
 
         }
 
@@ -223,13 +235,13 @@ The NuGet Gallery Team", root["body"]["html"]);
             
         }
 
-        /*
+        
         [TestMethod]
-        public void TestNewAccountWelcome_InvalidEmail()
+        public async Task TestNewAccountWelcome_InvalidEmail()
         {
             string fileContent = File.ReadAllText(TestJSONPath_InvalidEmail);
             StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
-            HttpResponseMessage response = await _server.HttpClient.PostAsync("/reportAbuse", postContent);
+            HttpResponseMessage response = await _server.HttpClient.PostAsync("/newAccountWelcome", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
             Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
@@ -239,10 +251,10 @@ The NuGet Gallery Team", root["body"]["html"]);
             JObject errorsJSON = JObject.Parse(errorsString);
 
             Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
-            Assert.AreEqual("ReportAbuse FAIL: Insufficient parameters.", errorsJSON["description"]);
+            Assert.AreEqual("NewAccountWelcome FAIL: not_an_email is not a valid email address.", errorsJSON["description"]);
             
         }
-        */
+        
 
         /*
         [TestMethod]

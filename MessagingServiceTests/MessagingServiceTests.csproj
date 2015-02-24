@@ -138,6 +138,7 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
+    <None Include="sampleJSON\ChangeEmailNoticeSamples\ChangeEmailNotice_InvalidEmail.json" />
     <None Include="sampleJSON\ChangeEmailNoticeSamples\ChangeEmailNotice_InvalidBrand.json" />
     <None Include="sampleJSON\ChangeEmailNoticeSamples\ChangeEmailNotice_MissingNewEmail.json" />
     <None Include="sampleJSON\ChangeEmailNoticeSamples\ChangeEmailNotice_ExtraParameter.json" />

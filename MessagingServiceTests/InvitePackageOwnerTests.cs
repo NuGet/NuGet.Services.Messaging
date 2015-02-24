@@ -9,6 +9,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Configuration;
 
 namespace MessagingServiceTests
 {
@@ -29,14 +30,16 @@ namespace MessagingServiceTests
         private const string TestJSONPath_ExtraParameters = "../../sampleJSON/InvitePackageOwnerSamples/InvitePackageOwner_ExtraParameter.json";
         private const string TestJSONPath_InvalidBrand = "../../sampleJSON/InvitePackageOwnerSamples/InvitePackageOwner_InvalidBrand.json";
 
-        private const string fileStorageLocation = "../../Messages";
+        private static string fileStorage_BaseAddress = ConfigurationManager.AppSettings["Storage.Secondary.BaseAddress"];
+        private static string fileStorage_Path = "../../Messages/InvitePackageOwnerTests";
+        private static string fileStorage_Queue = "../../Messages/InvitePackageOwnerTests/queue.txt";
 
 
         [ClassInitialize]
         public static void ClassInit(TestContext context)
         {
             // ensure uses file storage
-            _storageManager = new StorageManager(new FileStorage("http://localhost:8000/messages", fileStorageLocation));
+            _storageManager = new StorageManager(new FileStorage(fileStorage_BaseAddress, fileStorage_Path), "file", fileStorage_Queue);
             _server = TestServer.Create(app =>
             {
                 var startup = new Startup();
@@ -45,7 +48,7 @@ namespace MessagingServiceTests
             });
 
             // Inject connection failure to storage:  use fake storage.  Allows creation, but fails on save.
-            _storageManagerFake = new StorageManager(new FakeFileStorage("http://localhost:8000/messages", fileStorageLocation));
+            _storageManagerFake = new StorageManager(new FakeFileStorage(fileStorage_BaseAddress, fileStorage_Path), "fake");
             _server_noStorage = TestServer.Create(app =>
             {
                 var startup = new Startup();
@@ -66,17 +69,18 @@ namespace MessagingServiceTests
         }
 
         [ClassCleanup]
-        public static void ClassClean()
+        public static async void ClassClean()
         {
             _server.Dispose();
             _server_noStorage.Dispose();
+
+            await _storageManager.DeleteAll();
         }
 
         [TestCleanup]
-        public async void Cleanup()
+        public void Cleanup()
         {
-            // delete all contents of fileStorageLocation
-            bool result = await _storageManager.Delete("email1");
+            //await _storageManager.DeleteAll();
         }
 
 
@@ -102,15 +106,17 @@ namespace MessagingServiceTests
 
 
             // Check message
-            StreamStorageContent messageJSON = (StreamStorageContent)await _storageManager.Load("email1");
-            StreamReader reader = new StreamReader(messageJSON.GetContentStream());
-            string bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
+            string guid = _storageManager.GetLastContentName();
+            StorageContent messageContent = await _storageManager.Load(guid);
+            StreamReader reader = new StreamReader(messageContent.GetContentStream());
+            string content = await reader.ReadToEndAsync();
+            JObject root = JObject.Parse(content);
 
             Assert.AreEqual("someuser@live.com", root["to"]);
             Assert.AreEqual("support@powershellgallery.com", root["from"]);
-            Assert.AreEqual("[PowerShell Gallery] The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
-            Assert.AreEqual(@"The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'. 
+            Assert.AreEqual("PowerShell Gallery: The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
+            Assert.AreEqual(@"
+The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'. 
 If you do not want to be listed as an owner of this module, simply delete this email.
 
 To accept this request and become a listed owner of the module, click the following URL:
@@ -119,15 +125,17 @@ http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm
 
 Thanks,
 The PowerShell Gallery Team", root["body"]["text"]);
-            Assert.AreEqual(@"The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'. 
-If you do not want to be listed as an owner of this module, simply delete this email.
-
-To accept this request and become a listed owner of the module, click the following URL:
-
-[Accept Ownership Invitation](http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm)
-
-Thanks,
-The PowerShell Gallery Team", root["body"]["html"]);
+            Assert.AreEqual(@"
+<html >
+<body>
+    <p>The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.</p>
+    <p>If you do not want to be listed as an owner of this module, simply delete this email.</p>
+    <p>To accept this request and become a listed owner of the module, click the following URL:</p>
+    <p><a href='http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm'>Accept Ownership Invitation</a></p>
+    <p>Thanks,<br />
+    The PowerShell Gallery Team</p>
+</body>
+</html>", root["body"]["html"]);
 
         }
 
@@ -174,15 +182,17 @@ The PowerShell Gallery Team", root["body"]["html"]);
 
 
             // Check message
-            StreamStorageContent messageJSON = (StreamStorageContent)await _storageManager.Load("email1");
-            StreamReader reader = new StreamReader(messageJSON.GetContentStream());
-            string bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
+            string guid = _storageManager.GetLastContentName();
+            StorageContent messageContent = await _storageManager.Load(guid);
+            StreamReader reader = new StreamReader(messageContent.GetContentStream());
+            string content = await reader.ReadToEndAsync();
+            JObject root = JObject.Parse(content);
 
             Assert.AreEqual("someuser@live.com", root["to"]);
             Assert.AreEqual("support@powershellgallery.com", root["from"]);
-            Assert.AreEqual("[PowerShell Gallery] The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
-            Assert.AreEqual(@"The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'. 
+            Assert.AreEqual("PowerShell Gallery: The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
+            Assert.AreEqual(@"
+The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'. 
 If you do not want to be listed as an owner of this module, simply delete this email.
 
 To accept this request and become a listed owner of the module, click the following URL:
@@ -191,15 +201,17 @@ http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm
 
 Thanks,
 The PowerShell Gallery Team", root["body"]["text"]);
-            Assert.AreEqual(@"The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'. 
-If you do not want to be listed as an owner of this module, simply delete this email.
-
-To accept this request and become a listed owner of the module, click the following URL:
-
-[Accept Ownership Invitation](http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm)
-
-Thanks,
-The PowerShell Gallery Team", root["body"]["html"]);
+            Assert.AreEqual(@"
+<html >
+<body>
+    <p>The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.</p>
+    <p>If you do not want to be listed as an owner of this module, simply delete this email.</p>
+    <p>To accept this request and become a listed owner of the module, click the following URL:</p>
+    <p><a href='http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm'>Accept Ownership Invitation</a></p>
+    <p>Thanks,<br />
+    The PowerShell Gallery Team</p>
+</body>
+</html>", root["body"]["html"]);
 
         }
 

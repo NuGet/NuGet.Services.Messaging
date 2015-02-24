@@ -9,6 +9,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Configuration;
 
 namespace MessagingServiceTests
 {
@@ -30,14 +31,16 @@ namespace MessagingServiceTests
         private const string TestJSONPath_InvalidAction = "../../sampleJSON/EditCredentialSamples/EditCredential_InvalidAction.json";
         private const string TestJSONPath_InvalidType = "../../sampleJSON/EditCredentialSamples/EditCredential_InvalidType.json";
 
-        private const string fileStorageLocation = "../../Messages";
+        private static string fileStorage_BaseAddress = ConfigurationManager.AppSettings["Storage.Secondary.BaseAddress"];
+        private static string fileStorage_Path = "../../Messages/EditCredentialTests";
+        private static string fileStorage_Queue = "../../Messages/EditCredentialTests/queue.txt";
 
 
         [ClassInitialize]
         public static void ClassInit(TestContext context)
         {
             // ensure uses file storage
-            _storageManager = new StorageManager(new FileStorage("http://localhost:8000/messages", fileStorageLocation));
+            _storageManager = new StorageManager(new FileStorage(fileStorage_BaseAddress, fileStorage_Path), "file", fileStorage_Queue);
             _server = TestServer.Create(app =>
             {
                 var startup = new Startup();
@@ -46,7 +49,7 @@ namespace MessagingServiceTests
             });
 
             // Inject connection failure to storage:  use fake storage.  Allows creation, but fails on save.
-            _storageManagerFake = new StorageManager(new FakeFileStorage("http://localhost:8000/messages", fileStorageLocation));
+            _storageManagerFake = new StorageManager(new FakeFileStorage(fileStorage_BaseAddress, fileStorage_Path), "fake");
             _server_noStorage = TestServer.Create(app =>
             {
                 var startup = new Startup();
@@ -67,17 +70,18 @@ namespace MessagingServiceTests
         }
 
         [ClassCleanup]
-        public static void ClassClean()
+        public static async void ClassClean()
         {
             _server.Dispose();
             _server_noStorage.Dispose();
+
+            await _storageManager.DeleteAll();
         }
 
         [TestCleanup]
-        public async void Cleanup()
+        public void Cleanup()
         {
-            // delete all contents of fileStorageLocation
-            bool result = await _storageManager.Delete("email1");
+            //await _storageManager.DeleteAll();
         }
 
 
@@ -103,16 +107,29 @@ namespace MessagingServiceTests
 
 
             // Check message
-            StreamStorageContent messageJSON = (StreamStorageContent)await _storageManager.Load("email1");
-            StreamReader reader = new StreamReader(messageJSON.GetContentStream());
-            string bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
+            string guid = _storageManager.GetLastContentName();
+            StorageContent messageContent = await _storageManager.Load(guid);
+            StreamReader reader = new StreamReader(messageContent.GetContentStream());
+            string content = await reader.ReadToEndAsync();
+            JObject root = JObject.Parse(content);
 
             Assert.AreEqual("someuser@live.com", root["to"]);
             Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("[NuGet Gallery] MSAccount added to your account", root["subject"]);
-            Assert.AreEqual("A MSAccount was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["text"]);
-            Assert.AreEqual("A MSAccount was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["html"]);
+            Assert.AreEqual("NuGet Gallery: MSAccount added to your account", root["subject"]);
+            Assert.AreEqual(@"
+A MSAccount was added to your account and can now be used to log in. 
+If you did not request this change, please reply to this email to contact support.", root["body"]["text"]);
+            Assert.AreEqual(@"
+<html>
+<body>
+    <p>
+        A MSAccount was added to your account and can now be used to log in. 
+    </p>
+    <p>
+        If you did not request this change, please reply to this email to contact support.
+    </p>
+</body>
+</html>", root["body"]["html"]);
 
         }
 
@@ -159,17 +176,29 @@ namespace MessagingServiceTests
 
 
             // Check message
-            StreamStorageContent messageJSON = (StreamStorageContent)await _storageManager.Load("email1");
-            StreamReader reader = new StreamReader(messageJSON.GetContentStream());
-            string bodyContent = reader.ReadToEnd();
-            JObject root = JObject.Parse(bodyContent);
+            string guid = _storageManager.GetLastContentName();
+            StorageContent messageContent = await _storageManager.Load(guid);
+            StreamReader reader = new StreamReader(messageContent.GetContentStream());
+            string content = await reader.ReadToEndAsync();
+            JObject root = JObject.Parse(content);
 
             Assert.AreEqual("someuser@live.com", root["to"]);
             Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("[NuGet Gallery] MSAccount added to your account", root["subject"]);
-            Assert.AreEqual("A MSAccount was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["text"]);
-            Assert.AreEqual("A MSAccount was added to your account and can now be used to log in. If you did not request this change, please reply to this email to contact support.", root["body"]["html"]);
-
+            Assert.AreEqual("NuGet Gallery: MSAccount added to your account", root["subject"]);
+            Assert.AreEqual(@"
+A MSAccount was added to your account and can now be used to log in. 
+If you did not request this change, please reply to this email to contact support.", root["body"]["text"]);
+            Assert.AreEqual(@"
+<html>
+<body>
+    <p>
+        A MSAccount was added to your account and can now be used to log in. 
+    </p>
+    <p>
+        If you did not request this change, please reply to this email to contact support.
+    </p>
+</body>
+</html>", root["body"]["html"]);
         }
 
         

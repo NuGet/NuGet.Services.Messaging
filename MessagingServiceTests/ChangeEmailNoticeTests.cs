@@ -9,6 +9,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Configuration;
 
 namespace MessagingServiceTests
 {
@@ -27,15 +28,19 @@ namespace MessagingServiceTests
         private const string TestJSONPath_InsufficientParameters = "../../sampleJSON/ChangeEmailNoticeSamples/ChangeEmailNotice_MissingNewEmail.json";
         private const string TestJSONPath_ExtraParameters = "../../sampleJSON/ChangeEmailNoticeSamples/ChangeEmailNotice_ExtraParameter.json";
         private const string TestJSONPath_InvalidBrand = "../../sampleJSON/ChangeEmailNoticeSamples/ChangeEmailNotice_InvalidBrand.json";
-        
-        private const string fileStorageLocation = "../../Messages";
+        private const string TestJSONPath_InvalidEmail = "../../sampleJSON/ChangeEmailNoticeSamples/ChangeEmailNotice_InvalidEmail.json";
+
+
+        private static string fileStorage_BaseAddress = ConfigurationManager.AppSettings["Storage.Secondary.BaseAddress"];
+        private static string fileStorage_Path = "../../Messages/ChangeEmailNoticeTests";
+        private static string fileStorage_Queue = "../../Messages/ChangeEmailNoticeTests/queue.txt";
 
 
         [ClassInitialize]
         public static void ClassInit(TestContext context)
         {
             // ensure uses file storage
-            _storageManager = new StorageManager(new FileStorage("http://localhost:8000/messages", fileStorageLocation));
+            _storageManager = new StorageManager(new FileStorage(fileStorage_BaseAddress, fileStorage_Path), "file", fileStorage_Queue);
             _server = TestServer.Create(app =>
             {
                 var startup = new Startup();
@@ -44,7 +49,7 @@ namespace MessagingServiceTests
             });
 
             // Inject connection failure to storage:  use fake storage.  Allows creation, but fails on save.
-            _storageManagerFake = new StorageManager(new FakeFileStorage("http://localhost:8000/messages", fileStorageLocation));
+            _storageManagerFake = new StorageManager(new FakeFileStorage(fileStorage_BaseAddress, fileStorage_Path), "fake");
             _server_noStorage = TestServer.Create(app =>
             {
                 var startup = new Startup();
@@ -61,21 +66,20 @@ namespace MessagingServiceTests
                 startup.Configuration(app);
             });
             */
-
         }
 
         [ClassCleanup]
-        public static void ClassClean()
+        public static async void ClassClean()
         {
             _server.Dispose();
             _server_noStorage.Dispose();
+            await _storageManager.DeleteAll();
         }
 
         [TestCleanup]
-        public async void Cleanup()
+        public void Cleanup()
         {
-            // delete all contents of fileStorageLocation
-            bool result = await _storageManager.Delete("email1");
+            //await _storageManager.DeleteAll();
         }
 
 
@@ -101,40 +105,16 @@ namespace MessagingServiceTests
 
 
 
-            // Check first message (old)
-            StreamStorageContent oldMessageJSON = (StreamStorageContent)await _storageManager.Load("email1");
-            StreamReader reader_old = new StreamReader(oldMessageJSON.GetContentStream());
-            string oldBodyContent = reader_old.ReadToEnd();
-            JObject root_old = JObject.Parse(oldBodyContent);
-
-            Assert.AreEqual("oldEmail@live.com", root_old["to"]);
-            Assert.AreEqual("support@nuget.org", root_old["from"]);
-            Assert.AreEqual("[NuGet Gallery] Recent changes to your account.", root_old["subject"]);
-            Assert.AreEqual(@"Hi there,
-
-The email address associated to your NuGet account was recently changed from oldEmail@live.com to newEmail@live.com.
-
-Thanks,
-The NuGet Gallery Team", root_old["body"]["text"]);
-            Assert.AreEqual(@"Hi there,
-
-The email address associated to your NuGet account was recently changed from _oldEmail@live.com_ to _newEmail@live.com_.
-
-Thanks,
-The NuGet Gallery Team", root_old["body"]["html"]);
-
-
-
-
             // check second message (new)
-            StreamStorageContent newMessageJSON = (StreamStorageContent)await _storageManager.Load("email2");
-            StreamReader reader_new = new StreamReader(newMessageJSON.GetContentStream());
-            string newBodyContent = reader_new.ReadToEnd();
-            JObject root_new = JObject.Parse(newBodyContent);
+            string guid_new = _storageManager.GetLastContentName();
+            StorageContent messageContent_new = await _storageManager.Load(guid_new);
+            StreamReader reader_new = new StreamReader(messageContent_new.GetContentStream());
+            string content_new = await reader_new.ReadToEndAsync();
+            JObject root_new = JObject.Parse(content_new);
 
             Assert.AreEqual("newEmail@live.com", root_new["to"]);
             Assert.AreEqual("support@nuget.org", root_new["from"]);
-            Assert.AreEqual("[NuGet Gallery] Please verify your new email address.", root_new["subject"]);
+            Assert.AreEqual("NuGet Gallery: Please verify your new email address.", root_new["subject"]);
             Assert.AreEqual(@"You recently changed your NuGet email address. 
 
 To verify your new email address, please click the following link:
@@ -143,14 +123,60 @@ http://www.nuget.org/profile/email/verify
 
 Thanks,
 The NuGet Gallery Team", root_new["body"]["text"]);
-            Assert.AreEqual(@"You recently changed your NuGet email address. 
+            Assert.AreEqual(@"
+<html>
+<body>
+    <p>
+        You recently changed your NuGet email address.
+    </p>
+    <p>
+        To verify your new email address, please click the following link:
+    </p>
+    <a href='http://www.nuget.org/profile/email/verify'>Verify Email</a>
+    <p>
+        Thanks,<br>
+        The NuGet Gallery Team
+    </p>
+</body>
+</html>", root_new["body"]["html"]);
 
-To verify your new email address, please click the following link:
 
-[Verify Email](http://www.nuget.org/profile/email/verify)
+            bool result = await _storageManager.Delete(guid_new);
+
+
+            // Check first message (old)
+            string guid_old = _storageManager.GetLastContentName();
+            StorageContent messageContent_old = await _storageManager.Load(guid_old);
+            StreamReader reader_old = new StreamReader(messageContent_old.GetContentStream());
+            string content_old = await reader_old.ReadToEndAsync();
+            JObject root_old = JObject.Parse(content_old);
+
+            Assert.AreEqual("oldEmail@live.com", root_old["to"]);
+            Assert.AreEqual("support@nuget.org", root_old["from"]);
+            Assert.AreEqual("NuGet Gallery: Recent changes to your account.", root_old["subject"]);
+            Assert.AreEqual(@"Hi there,
+
+The email address associated to your NuGet account was recently changed from oldEmail@live.com to newEmail@live.com.
 
 Thanks,
-The NuGet Gallery Team", root_new["body"]["html"]);
+The NuGet Gallery Team", root_old["body"]["text"]);
+            Assert.AreEqual(@"
+<html>
+<body>
+    <p>
+        Hi there,
+    </p>
+    <p>
+        The email address associated to your NuGet account was recently changed from &lt;oldEmail@live.com&gt; to &lt;newEmail@live.com&gt;.
+    </p>
+    <p>
+        Thanks,<br>
+        The NuGet Gallery Team
+    </p>
+</body>
+</html>", root_old["body"]["html"]);
+
+            result = await _storageManager.Delete(guid_old);
 
         }
 
@@ -197,40 +223,17 @@ The NuGet Gallery Team", root_new["body"]["html"]);
 
 
 
-            // Check first message (old)
-            StreamStorageContent oldMessageJSON = (StreamStorageContent)await _storageManager.Load("email1");
-            StreamReader reader_old = new StreamReader(oldMessageJSON.GetContentStream());
-            string oldBodyContent = reader_old.ReadToEnd();
-            JObject root_old = JObject.Parse(oldBodyContent);
-
-            Assert.AreEqual("oldEmail@live.com", root_old["to"]);
-            Assert.AreEqual("support@nuget.org", root_old["from"]);
-            Assert.AreEqual("[NuGet Gallery] Recent changes to your account.", root_old["subject"]);
-            Assert.AreEqual(@"Hi there,
-
-The email address associated to your NuGet account was recently changed from oldEmail@live.com to newEmail@live.com.
-
-Thanks,
-The NuGet Gallery Team", root_old["body"]["text"]);
-            Assert.AreEqual(@"Hi there,
-
-The email address associated to your NuGet account was recently changed from _oldEmail@live.com_ to _newEmail@live.com_.
-
-Thanks,
-The NuGet Gallery Team", root_old["body"]["html"]);
-
-
-
 
             // check second message (new)
-            StreamStorageContent newMessageJSON = (StreamStorageContent)await _storageManager.Load("email2");
-            StreamReader reader_new = new StreamReader(newMessageJSON.GetContentStream());
-            string newBodyContent = reader_new.ReadToEnd();
-            JObject root_new = JObject.Parse(newBodyContent);
+            string guid_new = _storageManager.GetLastContentName();
+            StorageContent messageContent_new = await _storageManager.Load(guid_new);
+            StreamReader reader_new = new StreamReader(messageContent_new.GetContentStream());
+            string content_new = await reader_new.ReadToEndAsync();
+            JObject root_new = JObject.Parse(content_new);
 
             Assert.AreEqual("newEmail@live.com", root_new["to"]);
             Assert.AreEqual("support@nuget.org", root_new["from"]);
-            Assert.AreEqual("[NuGet Gallery] Please verify your new email address.", root_new["subject"]);
+            Assert.AreEqual("NuGet Gallery: Please verify your new email address.", root_new["subject"]);
             Assert.AreEqual(@"You recently changed your NuGet email address. 
 
 To verify your new email address, please click the following link:
@@ -239,14 +242,59 @@ http://www.nuget.org/profile/email/verify
 
 Thanks,
 The NuGet Gallery Team", root_new["body"]["text"]);
-            Assert.AreEqual(@"You recently changed your NuGet email address. 
+            Assert.AreEqual(@"
+<html>
+<body>
+    <p>
+        You recently changed your NuGet email address.
+    </p>
+    <p>
+        To verify your new email address, please click the following link:
+    </p>
+    <a href='http://www.nuget.org/profile/email/verify'>Verify Email</a>
+    <p>
+        Thanks,<br>
+        The NuGet Gallery Team
+    </p>
+</body>
+</html>", root_new["body"]["html"]);
 
-To verify your new email address, please click the following link:
 
-[Verify Email](http://www.nuget.org/profile/email/verify)
+            bool result = await _storageManager.Delete(guid_new);
+
+
+            // Check first message (old)
+            string guid_old = _storageManager.GetLastContentName();
+            StorageContent messageContent_old = await _storageManager.Load(guid_old);
+            StreamReader reader_old = new StreamReader(messageContent_old.GetContentStream());
+            string content_old = await reader_old.ReadToEndAsync();
+            JObject root_old = JObject.Parse(content_old);
+
+            Assert.AreEqual("oldEmail@live.com", root_old["to"]);
+            Assert.AreEqual("support@nuget.org", root_old["from"]);
+            Assert.AreEqual("NuGet Gallery: Recent changes to your account.", root_old["subject"]);
+            Assert.AreEqual(@"Hi there,
+
+The email address associated to your NuGet account was recently changed from oldEmail@live.com to newEmail@live.com.
 
 Thanks,
-The NuGet Gallery Team", root_new["body"]["html"]);
+The NuGet Gallery Team", root_old["body"]["text"]);
+            Assert.AreEqual(@"
+<html>
+<body>
+    <p>
+        Hi there,
+    </p>
+    <p>
+        The email address associated to your NuGet account was recently changed from &lt;oldEmail@live.com&gt; to &lt;newEmail@live.com&gt;.
+    </p>
+    <p>
+        Thanks,<br>
+        The NuGet Gallery Team
+    </p>
+</body>
+</html>", root_old["body"]["html"]);
+
 
         }
 
@@ -269,11 +317,12 @@ The NuGet Gallery Team", root_new["body"]["html"]);
             Assert.AreEqual("ChangeEmailNotice FAIL: FakeBrand is not a valid brand.  Options:  NuGet", errorsJSON["description"]);
 
         }
-        /*
+        
+
         [TestMethod]
         public async Task TestChangeEmailNotice_InvalidEmail()
         {
-            string fileContent = File.ReadAllText(TestJSONPath_InsufficientParameters);
+            string fileContent = File.ReadAllText(TestJSONPath_InvalidEmail);
             StringContent postContent = new StringContent(fileContent, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/changeEmailNotice", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
@@ -285,12 +334,10 @@ The NuGet Gallery Team", root_new["body"]["html"]);
             JObject errorsJSON = JObject.Parse(errorsString);
 
             Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
-            Assert.AreEqual("ChangeEmailNotice FAIL: Insufficient parameters.", errorsJSON["description"]);
-            string expectedMissingParams = (new JArray(new List<string>() { "newEmail" })).ToString();
-            string actualMissingParams = ((JArray)errorsJSON["missingParameters"]).ToString();
-            Assert.AreEqual(expectedMissingParams, actualMissingParams);
+            Assert.AreEqual("ChangeEmailNotice FAIL: not_an_email is not a valid email address.", errorsJSON["description"]);
+
         }
-        */
+        
         /*
         [TestMethod]
         public void TestChangeEmailNotice_AADConnectionFailed()
