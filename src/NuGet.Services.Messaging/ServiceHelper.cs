@@ -1,12 +1,9 @@
-﻿using Microsoft.Azure.ActiveDirectory.GraphClient;
-using Microsoft.Azure.ActiveDirectory.GraphClient.Extensions;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using Microsoft.Owin;
+﻿using Microsoft.Owin;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Net;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -62,61 +59,31 @@ namespace NuGet.Services.Messaging
             }
         }
 
-
-        /*
-        public static async Task<ActiveDirectoryClient> GetActiveDirectoryClient()
+        public static Task<string> GetEmail(string username)
         {
-            // Taken from NuGet.Services.Publish.ServiceHelpers.cs
             
-            string authority = string.Format(aadInstance, tenant);
-
-            AuthenticationContext authContext = new AuthenticationContext(authority);
-
-            ClientCredential clientCredential = new ClientCredential(clientId, appKey);
-            AuthenticationResult result = await authContext.AcquireTokenAsync(graphResourceId, clientCredential);
-
-            string accessToken = result.AccessToken;
-
-            Uri serviceRoot = new Uri(new Uri(graphResourceId), tenant);
-
-            ActiveDirectoryClient activeDirectoryClient = new ActiveDirectoryClient(serviceRoot, () => { return Task.FromResult(accessToken); });
-
-            return activeDirectoryClient;
-        }
-        */
-
-        public static Task<string> GetUserEmailAddressFromUsername(string username)
-        {
-            //ActiveDirectoryClient activeDirectoryClient = await GetActiveDirectoryClient();
-            //IUser user = await activeDirectoryClient.Users.GetByObjectId(username).ExecuteAsync();
-            //string emailAddress = user.Mail;  // assuming email is stored in mail
-            //return emailAddress;
-
 
             // for now, return dummy values
             return Task<string>.Run(() => { return "someuser@live.com"; });
         }
 
         
-        public static Task<List<string>> GetOwnerEmailAddressesFromPackageID(string packageID)
+        public static Task<List<string>> GetOwnersEmails(string packageID)
         {
-            //ActiveDirectoryClient activeDirectoryClient = await GetActiveDirectoryClient();
-            //IGroup package = await activeDirectoryClient.Groups.GetByObjectId(packageID).ExecuteAsync();
-            //IPagedCollection<IDirectoryObject> owners = package.Owners;
-
-            //owners.CurrentPage
             
-            //List<string> ownerEmails = new List<string>();
-            // for each owner, call GetUserEmailAddressFromUsername(ownerUsername)
-            // store each email in a list
-            
-
 
             // for now, return dummy values
             return Task<List<string>>.Run(() => { return new List<string> { "user1@gmail.com", "user2@gmail.com", "user3@gmail.com" }; });
 
         }
 
+
+        public static Task<bool> IsContactAllowed(string packageID)
+        {
+
+            // for now, return dummy values
+            return Task<bool>.Run(() => { return true; });
+        }
 
         public static IConstants GetBrandConstants(string brand)
         {
@@ -189,6 +156,21 @@ namespace NuGet.Services.Messaging
                 }
             }
             return missingParams;
+        }
+
+
+
+        public static bool IsValidEmail(string email)
+        {
+            try
+            {
+                MailAddress addr = new MailAddress(email);
+                return addr.Address.Equals(email);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
 

@@ -1,12 +1,12 @@
 ﻿using Microsoft.Owin;
-using System.Net;
-using System;
-using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
-using System.IO;
-using System.Globalization;
-using System.Collections.Generic;
 using NuGet.Services.Metadata.Catalog.Persistence;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace NuGet.Services.Messaging
 {
@@ -54,9 +54,6 @@ namespace NuGet.Services.Messaging
             string brand = root.Value<string>("brand");
 
 
-            // TODO:  validate parameters
-            
-
             IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
             if (brandValues == null)
             {
@@ -71,7 +68,7 @@ namespace NuGet.Services.Messaging
             }
             
 
-            List<string> ownersAddressesList = await ServiceHelper.GetOwnerEmailAddressesFromPackageID(packageId);
+            List<string> ownersAddressesList = await ServiceHelper.GetOwnersEmails(packageId);
             string ownersAddresses = string.Join(",", ownersAddressesList.ToArray()); 
 
             //================================================================
@@ -92,7 +89,7 @@ namespace NuGet.Services.Messaging
                 return;
             }
 
-            string fromUserAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
+            string fromUserAddress = await ServiceHelper.GetEmail(fromUsername);
             
             
             //  compose email
@@ -195,13 +192,25 @@ namespace NuGet.Services.Messaging
             string fromAddress = root.Value<string>("fromAddress");
             string brand = root.Value<string>("brand");
 
-            // TODO:  validate parameters
+            
 
             if (String.IsNullOrEmpty(fromUsername) && String.IsNullOrEmpty(fromAddress))
             {
                 JObject errorObject = new JObject();
                 errorObject.Add("error", (int)HttpStatusCode.BadRequest);
                 errorObject.Add("description", "ReportAbuse FAIL: Insufficient parameters.  Need either fromUsername or fromAddress.");
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                await context.Response.WriteAsync(errorObject.ToString());
+                return;
+            }
+
+            // if fromUsername is empty and fromAddress is not (ie. we are going to send message to fromAddress), validate it first
+            if ( String.IsNullOrEmpty(fromUsername) && !String.IsNullOrEmpty(fromAddress) && !ServiceHelper.IsValidEmail(fromAddress))
+            {
+                JObject errorObject = new JObject();
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "ReportAbuse FAIL: " + fromAddress + " is not a valid email address.");
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 await context.Response.WriteAsync(errorObject.ToString());
@@ -239,7 +248,7 @@ namespace NuGet.Services.Messaging
 
             if (!String.IsNullOrEmpty(fromUsername))
             {
-                fromAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
+                fromAddress = await ServiceHelper.GetEmail(fromUsername);
             }
 
 
@@ -266,10 +275,10 @@ namespace NuGet.Services.Messaging
                 brandValues.ReportAbuse_EmailBody_HTML,
                 fromUsername,
                 fromAddress,
-                packageId,
                 packageURL,
-                packageVersion,
+                packageId,
                 versionURL,
+                packageVersion,
                 reason,
                 ownersContacted ? "Yes" : "No",
                 message);
@@ -352,7 +361,6 @@ namespace NuGet.Services.Messaging
             string fromUsername = root.Value<string>("fromUsername");
             string brand = root.Value<string>("brand");
 
-            // TODO:  validate parameters
 
             IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
             if (brandValues == null)
@@ -369,7 +377,7 @@ namespace NuGet.Services.Messaging
 
             string packageURL = String.Format(CultureInfo.CurrentCulture, brandValues.EntityURL, packageId);
             string versionURL = String.Format(CultureInfo.CurrentCulture, brandValues.EntityVersionURL, packageId, packageVersion); 
-            string fromAddress = await ServiceHelper.GetUserEmailAddressFromUsername(fromUsername);
+            string fromAddress = await ServiceHelper.GetEmail(fromUsername);
 
             
             string subject = String.Format(
@@ -394,10 +402,10 @@ namespace NuGet.Services.Messaging
                 brandValues.ContactSupport_EmailBody_HTML,
                 fromUsername,
                 fromAddress,
-                packageId,
                 packageURL,
-                packageVersion,
+                packageId,
                 versionURL,
+                packageVersion,
                 reason,
                 message);
 
@@ -480,7 +488,6 @@ namespace NuGet.Services.Messaging
             string fromUsername = root.Value<string>("fromUsername");
             string brand = root.Value<string>("brand");
 
-            // TODO:  validate parameters
 
             IConstants brandValues = ServiceHelper.GetBrandConstants(brand);
             if (brandValues == null)
@@ -496,7 +503,7 @@ namespace NuGet.Services.Messaging
             }
 
 
-            string toAddress = await ServiceHelper.GetUserEmailAddressFromUsername(toUsername);
+            string toAddress = await ServiceHelper.GetEmail(toUsername);
             string confirmURL = String.Format(CultureInfo.CurrentCulture, brandValues.ConfirmPackageOwnershipInviteURL, packageId);
 
             string subject = String.Format(
@@ -619,7 +626,16 @@ namespace NuGet.Services.Messaging
             string brand = root.Value<string>("brand");
 
 
-            // TODO:  validate parameters
+            if ( !ServiceHelper.IsValidEmail(toAddress))
+            {
+                JObject errorObject = new JObject();
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "NewAccountWelcome FAIL: " + toAddress + " is not a valid email address.");
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                await context.Response.WriteAsync(errorObject.ToString());
+                return;
+            }
 
 
             // Always use NuGet constants, email only sent for NuGet users
@@ -723,7 +739,28 @@ namespace NuGet.Services.Messaging
             string brand = root.Value<string>("brand");
 
 
-            // TODO:  validate parameters
+            if (!ServiceHelper.IsValidEmail(oldAddress))
+            {
+                JObject errorObject = new JObject();
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "ChangeEmailNotice FAIL: " + oldAddress + " is not a valid email address.");
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                await context.Response.WriteAsync(errorObject.ToString());
+                return;
+            }
+
+            if (!ServiceHelper.IsValidEmail(newAddress))
+            {
+                JObject errorObject = new JObject();
+                errorObject.Add("error", (int)HttpStatusCode.BadRequest);
+                errorObject.Add("description", "ChangeEmailNotice FAIL: " + newAddress + " is not a valid email address.");
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                await context.Response.WriteAsync(errorObject.ToString());
+                return;
+            }
+
 
             // Always use NuGet constants, email only sent for NuGet users
             Brand.NuGet.Constants brandValues = (Brand.NuGet.Constants)ServiceHelper.GetBrandConstants(brand);
@@ -889,7 +926,7 @@ namespace NuGet.Services.Messaging
 
 
 
-            string toAddress = await ServiceHelper.GetUserEmailAddressFromUsername(username);
+            string toAddress = await ServiceHelper.GetEmail(username);
 
 
 
@@ -1045,7 +1082,7 @@ namespace NuGet.Services.Messaging
 
 
 
-            string toAddress = await ServiceHelper.GetUserEmailAddressFromUsername(username);
+            string toAddress = await ServiceHelper.GetEmail(username);
 
 
 
