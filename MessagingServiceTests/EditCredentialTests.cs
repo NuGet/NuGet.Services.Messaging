@@ -94,32 +94,25 @@ namespace MessagingServiceTests
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/editCredential", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                // print errors
-            }
 
-            // says service unavailable, but has the response?
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("someuser@live.com", root["to"]);
-            Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("NuGet Gallery: MSAccount added to your account", root["subject"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual("someuser@live.com", root["to"]);
+                Assert.AreEqual("support@nuget.org", root["from"]);
+                Assert.AreEqual("NuGet Gallery: MSAccount added to your account", root["subject"]);
+                Assert.AreEqual(@"
 A MSAccount was added to your account and can now be used to log in. 
 If you did not request this change, please reply to this email to contact support.", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html>
 <body>
     <p>
@@ -131,6 +124,8 @@ If you did not request this change, please reply to this email to contact suppor
 </body>
 </html>", root["body"]["html"]);
 
+            }
+            
         }
 
         [TestMethod]
@@ -163,13 +158,6 @@ If you did not request this change, please reply to this email to contact suppor
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/editCredential", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                // print errors
-            }
 
             // says service unavailable, but has the response?
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
@@ -178,17 +166,18 @@ If you did not request this change, please reply to this email to contact suppor
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("someuser@live.com", root["to"]);
-            Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("NuGet Gallery: MSAccount added to your account", root["subject"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual("someuser@live.com", root["to"]);
+                Assert.AreEqual("support@nuget.org", root["from"]);
+                Assert.AreEqual("NuGet Gallery: MSAccount added to your account", root["subject"]);
+                Assert.AreEqual(@"
 A MSAccount was added to your account and can now be used to log in. 
 If you did not request this change, please reply to this email to contact support.", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html>
 <body>
     <p>
@@ -199,6 +188,8 @@ If you did not request this change, please reply to this email to contact suppor
     </p>
 </body>
 </html>", root["body"]["html"]);
+            }
+            
         }
 
         
@@ -238,7 +229,6 @@ If you did not request this change, please reply to this email to contact suppor
             Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
             Assert.AreEqual("EditCredential FAIL: get is not a valid action.  Options:  add, remove", errorsJSON["description"]);
             
-            
         }
 
         [TestMethod]
@@ -257,7 +247,6 @@ If you did not request this change, please reply to this email to contact suppor
 
             Assert.AreEqual((int)HttpStatusCode.BadRequest, errorsJSON["error"]);
             Assert.AreEqual("EditCredential FAIL: account is not a valid type.  Options:  APIKey, password, MSAccount", errorsJSON["description"]);
-            
             
         }
 

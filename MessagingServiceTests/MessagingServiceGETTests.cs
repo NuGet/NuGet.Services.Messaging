@@ -35,15 +35,7 @@ namespace MessagingServiceTests
             HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/reportAbuse/NuGet");
             Stream responseStream = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(responseStream);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                Assert.Fail();
-            }
 
-            
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
             Assert.AreEqual("application/json", response.Content.Headers.ContentType.ToString());
 
@@ -66,14 +58,6 @@ namespace MessagingServiceTests
         {
             HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/reportAbuse/PowerShellGallery");
             Stream responseStream = response.Content.ReadAsStreamAsync().Result;
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(responseStream);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                Assert.Fail();
-            }
 
 
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
@@ -147,14 +131,6 @@ namespace MessagingServiceTests
             HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/contactSupport/NuGet");
             Stream responseStream = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(responseStream);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                Assert.Fail();
-            }
-
 
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
             Assert.AreEqual("application/json", response.Content.Headers.ContentType.ToString());
@@ -178,14 +154,6 @@ namespace MessagingServiceTests
         {
             HttpResponseMessage response = await _server.HttpClient.GetAsync("/reasons/contactSupport/PowerShellGallery");
             Stream responseStream = response.Content.ReadAsStreamAsync().Result;
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(responseStream);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                Assert.Fail();
-            }
 
 
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);

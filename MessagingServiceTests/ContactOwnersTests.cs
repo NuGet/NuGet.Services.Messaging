@@ -97,12 +97,6 @@ namespace MessagingServiceTests
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/contactOwners", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-            }
 
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
@@ -110,20 +104,21 @@ namespace MessagingServiceTests
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("user1@gmail.com,user2@gmail.com,user3@gmail.com", root["to"]);
-            Assert.AreEqual("support@powershellgallery.com", root["from"]);
-            Assert.AreEqual("someuser@live.com", root["cc"]);
-            Assert.AreEqual("PowerShell Gallery: Message for owners of the module 'SomeTestPackage'", root["subject"]);
-            Assert.AreEqual(@"User rebro-1 <someuser@live.com> sends the following message to the owners of module 'SomeTestPackage':
+                Assert.AreEqual("user1@gmail.com,user2@gmail.com,user3@gmail.com", root["to"]);
+                Assert.AreEqual("support@powershellgallery.com", root["from"]);
+                Assert.AreEqual("someuser@live.com", root["cc"]);
+                Assert.AreEqual("PowerShell Gallery: Message for owners of the module 'SomeTestPackage'", root["subject"]);
+                Assert.AreEqual(@"User rebro-1 <someuser@live.com> sends the following message to the owners of module 'SomeTestPackage':
             
             Hello owners, I would like to be an owner too.  Please add me!
 
         To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and change your email notification settings: http://www.powershellgallery.com/profile/notifications.", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html>
 <body>
     <p>User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':</p>
@@ -134,7 +129,8 @@ namespace MessagingServiceTests
     </em>
 </body>
 </html>", root["body"]["html"]);
-
+            }
+            
         }
 
 
@@ -176,35 +172,28 @@ namespace MessagingServiceTests
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/contactOwners", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                // print errors?
-            }
 
-            // says service unavailable, but has the response?
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("user1@gmail.com,user2@gmail.com,user3@gmail.com", root["to"]);
-            Assert.AreEqual("support@powershellgallery.com", root["from"]);
-            Assert.AreEqual("someuser@live.com", root["cc"]);
-            Assert.AreEqual("PowerShell Gallery: Message for owners of the module 'SomeTestPackage'", root["subject"]);
-            Assert.AreEqual(@"User rebro-1 <someuser@live.com> sends the following message to the owners of module 'SomeTestPackage':
+                Assert.AreEqual("user1@gmail.com,user2@gmail.com,user3@gmail.com", root["to"]);
+                Assert.AreEqual("support@powershellgallery.com", root["from"]);
+                Assert.AreEqual("someuser@live.com", root["cc"]);
+                Assert.AreEqual("PowerShell Gallery: Message for owners of the module 'SomeTestPackage'", root["subject"]);
+                Assert.AreEqual(@"User rebro-1 <someuser@live.com> sends the following message to the owners of module 'SomeTestPackage':
             
             Hello owners, I would like to be an owner too.  Please add me!
 
         To stop receiving contact emails as an owner of this module, sign in to the PowerShell Gallery and change your email notification settings: http://www.powershellgallery.com/profile/notifications.", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html>
 <body>
     <p>User rebro-1 &lt;someuser@live.com&gt; sends the following message to the owners of module 'SomeTestPackage':</p>
@@ -215,7 +204,8 @@ namespace MessagingServiceTests
     </em>
 </body>
 </html>", root["body"]["html"]);
-
+            }
+            
         }
 
 

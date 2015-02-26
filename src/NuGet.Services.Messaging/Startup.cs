@@ -4,7 +4,6 @@ using Owin;
 using System.Configuration;
 using System.Net;
 using System.Threading.Tasks;
-using NuGet.Services.Metadata.Catalog.Persistence;
 
 [assembly: OwinStartup(typeof(NuGet.Services.Messaging.Startup))]
 

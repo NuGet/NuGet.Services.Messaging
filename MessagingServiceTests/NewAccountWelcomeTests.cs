@@ -93,29 +93,22 @@ namespace MessagingServiceTests
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/newAccountWelcome", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                // print errors
-            }
 
-            // says service unavailable, but has the response?
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("Some_Email@live.com", root["to"]);
-            Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("NuGet Gallery: Please verify your account.", root["subject"]);
-            Assert.AreEqual(@"Thank you for registering with the NuGet Gallery! We can't wait to see what packages you'll upload.
+                Assert.AreEqual("Some_Email@live.com", root["to"]);
+                Assert.AreEqual("support@nuget.org", root["from"]);
+                Assert.AreEqual("NuGet Gallery: Please verify your account.", root["subject"]);
+                Assert.AreEqual(@"Thank you for registering with the NuGet Gallery! We can't wait to see what packages you'll upload.
 
 So we can be sure to contact you, please verify your email address and click the following link:
 
@@ -123,7 +116,7 @@ http://www.nuget.org/profile/email/verify
 
 Thanks,
 The NuGet Gallery Team", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html>
 <body>
     <p>Thank you for registering with the NuGet Gallery! We can't wait to see what packages you'll upload.</p>
@@ -136,7 +129,8 @@ The NuGet Gallery Team", root["body"]["text"]);
     
 </body>
 </html>", root["body"]["html"]);
-
+            }
+            
         }
 
         [TestMethod]
@@ -169,29 +163,22 @@ The NuGet Gallery Team", root["body"]["text"]);
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/newAccountWelcome", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                // print errors
-            }
 
-            // says service unavailable, but has the response?
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("Some_Email@live.com", root["to"]);
-            Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("NuGet Gallery: Please verify your account.", root["subject"]);
-            Assert.AreEqual(@"Thank you for registering with the NuGet Gallery! We can't wait to see what packages you'll upload.
+                Assert.AreEqual("Some_Email@live.com", root["to"]);
+                Assert.AreEqual("support@nuget.org", root["from"]);
+                Assert.AreEqual("NuGet Gallery: Please verify your account.", root["subject"]);
+                Assert.AreEqual(@"Thank you for registering with the NuGet Gallery! We can't wait to see what packages you'll upload.
 
 So we can be sure to contact you, please verify your email address and click the following link:
 
@@ -199,7 +186,7 @@ http://www.nuget.org/profile/email/verify
 
 Thanks,
 The NuGet Gallery Team", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html>
 <body>
     <p>Thank you for registering with the NuGet Gallery! We can't wait to see what packages you'll upload.</p>
@@ -212,7 +199,8 @@ The NuGet Gallery Team", root["body"]["text"]);
     
 </body>
 </html>", root["body"]["html"]);
-
+            }
+            
         }
 
         

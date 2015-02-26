@@ -94,30 +94,23 @@ namespace MessagingServiceTests
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/reportAbuse", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                // print errors
-            }
 
-            // says service unavailable, but has the response?
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("support@powershellgallery.com", root["to"]);
-            Assert.AreEqual("someuser@live.com", root["from"]);
-            Assert.AreEqual("someuser@live.com", root["cc"]);
-            Assert.AreEqual("PowerShell Gallery: Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package has a bug in it.)", root["subject"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual("support@powershellgallery.com", root["to"]);
+                Assert.AreEqual("someuser@live.com", root["from"]);
+                Assert.AreEqual("someuser@live.com", root["cc"]);
+                Assert.AreEqual("PowerShell Gallery: Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package has a bug in it.)", root["subject"]);
+                Assert.AreEqual(@"
 Email: 
 rebro-1 <someuser@live.com>
 
@@ -135,7 +128,7 @@ Yes
 
 Message:
 Please remove this package right away, it is terrible!", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html>
 <body>
     <div>
@@ -168,7 +161,8 @@ Please remove this package right away, it is terrible!", root["body"]["text"]);
     </div>
 </body>
 </html>", root["body"]["html"]);
-
+            }
+            
         }
 
 
@@ -202,30 +196,23 @@ Please remove this package right away, it is terrible!", root["body"]["text"]);
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/reportAbuse", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                // print errors
-            }
 
-            // says service unavailable, but has the response?
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("support@powershellgallery.com", root["to"]);
-            Assert.AreEqual("someuser@live.com", root["from"]);
-            Assert.AreEqual("someuser@live.com", root["cc"]);
-            Assert.AreEqual("PowerShell Gallery: Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package has a bug in it.)", root["subject"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual("support@powershellgallery.com", root["to"]);
+                Assert.AreEqual("someuser@live.com", root["from"]);
+                Assert.AreEqual("someuser@live.com", root["cc"]);
+                Assert.AreEqual("PowerShell Gallery: Support Request for 'SomeTestPackage' version 1.0.0 (Reason: This package has a bug in it.)", root["subject"]);
+                Assert.AreEqual(@"
 Email: 
 rebro-1 <someuser@live.com>
 
@@ -243,7 +230,7 @@ Yes
 
 Message:
 Please remove this package right away, it is terrible!", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html>
 <body>
     <div>
@@ -276,7 +263,8 @@ Please remove this package right away, it is terrible!", root["body"]["text"]);
     </div>
 </body>
 </html>", root["body"]["html"]);
-
+            }
+            
         }
 
         

@@ -93,29 +93,22 @@ namespace MessagingServiceTests
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/resetPasswordInstructions", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                // print errors
-            }
 
-            // says service unavailable, but has the response?
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("someuser@live.com", root["to"]);
-            Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("NuGet Gallery: Please reset your password.", root["subject"]);
-            Assert.AreEqual(@"The word on the street is you lost your password. Sorry to hear it!
+                Assert.AreEqual("someuser@live.com", root["to"]);
+                Assert.AreEqual("support@nuget.org", root["from"]);
+                Assert.AreEqual("NuGet Gallery: Please reset your password.", root["subject"]);
+                Assert.AreEqual(@"The word on the street is you lost your password. Sorry to hear it!
 If you haven't forgotten your password you can safely ignore this email. Your password has not been changed.
 
 Click the following link within the next 12 hours to reset your password:
@@ -124,7 +117,7 @@ http://www.nuget.org/profile/password/reset
 
 Thanks,
 The NuGet Gallery Team", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html>
 <body>
     <p>
@@ -143,7 +136,8 @@ The NuGet Gallery Team", root["body"]["text"]);
     </p>
 </body>
 </html>", root["body"]["html"]);
-
+            }
+            
         }
 
         [TestMethod]
@@ -176,29 +170,22 @@ The NuGet Gallery Team", root["body"]["text"]);
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/resetPasswordInstructions", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                // print errors
-            }
 
-            // says service unavailable, but has the response?
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("someuser@live.com", root["to"]);
-            Assert.AreEqual("support@nuget.org", root["from"]);
-            Assert.AreEqual("NuGet Gallery: Please reset your password.", root["subject"]);
-            Assert.AreEqual(@"The word on the street is you lost your password. Sorry to hear it!
+                Assert.AreEqual("someuser@live.com", root["to"]);
+                Assert.AreEqual("support@nuget.org", root["from"]);
+                Assert.AreEqual("NuGet Gallery: Please reset your password.", root["subject"]);
+                Assert.AreEqual(@"The word on the street is you lost your password. Sorry to hear it!
 If you haven't forgotten your password you can safely ignore this email. Your password has not been changed.
 
 Click the following link within the next 12 hours to reset your password:
@@ -207,7 +194,7 @@ http://www.nuget.org/profile/password/reset
 
 Thanks,
 The NuGet Gallery Team", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html>
 <body>
     <p>
@@ -226,7 +213,8 @@ The NuGet Gallery Team", root["body"]["text"]);
     </p>
 </body>
 </html>", root["body"]["html"]);
-
+            }
+            
         }
 
         

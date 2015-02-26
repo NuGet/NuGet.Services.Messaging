@@ -93,29 +93,22 @@ namespace MessagingServiceTests
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/invitePackageOwner", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                // print errors
-            }
 
-            // says service unavailable, but has the response?
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("someuser@live.com", root["to"]);
-            Assert.AreEqual("support@powershellgallery.com", root["from"]);
-            Assert.AreEqual("PowerShell Gallery: The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual("someuser@live.com", root["to"]);
+                Assert.AreEqual("support@powershellgallery.com", root["from"]);
+                Assert.AreEqual("PowerShell Gallery: The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
+                Assert.AreEqual(@"
 The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'. 
 If you do not want to be listed as an owner of this module, simply delete this email.
 
@@ -125,7 +118,7 @@ http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm
 
 Thanks,
 The PowerShell Gallery Team", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html >
 <body>
     <p>The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.</p>
@@ -136,7 +129,8 @@ The PowerShell Gallery Team", root["body"]["text"]);
     The PowerShell Gallery Team</p>
 </body>
 </html>", root["body"]["html"]);
-
+            }
+            
         }
 
         [TestMethod]
@@ -169,29 +163,22 @@ The PowerShell Gallery Team", root["body"]["text"]);
             HttpResponseMessage response = await _server.HttpClient.PostAsync("/invitePackageOwner", postContent);
             Stream errors = response.Content.ReadAsStreamAsync().Result;
 
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                StreamReader errorsReader = new StreamReader(errors);
-                string errorsString = errorsReader.ReadToEnd();
-                JObject errorsJSON = JObject.Parse(errorsString);
-                // print errors
-            }
 
-            // says service unavailable, but has the response?
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 
             // Check message
             string guid = _storageManager.GetLastContentName();
             StorageContent messageContent = await _storageManager.Load(guid);
-            StreamReader reader = new StreamReader(messageContent.GetContentStream());
-            string content = await reader.ReadToEndAsync();
-            JObject root = JObject.Parse(content);
+            using (StreamReader reader = new StreamReader(messageContent.GetContentStream()))
+            {
+                string content = await reader.ReadToEndAsync();
+                JObject root = JObject.Parse(content);
 
-            Assert.AreEqual("someuser@live.com", root["to"]);
-            Assert.AreEqual("support@powershellgallery.com", root["from"]);
-            Assert.AreEqual("PowerShell Gallery: The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual("someuser@live.com", root["to"]);
+                Assert.AreEqual("support@powershellgallery.com", root["from"]);
+                Assert.AreEqual("PowerShell Gallery: The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.", root["subject"]);
+                Assert.AreEqual(@"
 The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'. 
 If you do not want to be listed as an owner of this module, simply delete this email.
 
@@ -201,7 +188,7 @@ http://www.powershellgallery.com/modules/SomeTestPackage/owners/confirm
 
 Thanks,
 The PowerShell Gallery Team", root["body"]["text"]);
-            Assert.AreEqual(@"
+                Assert.AreEqual(@"
 <html >
 <body>
     <p>The user 'rebro-1' wants to add you as an owner of the module 'SomeTestPackage'.</p>
@@ -212,7 +199,8 @@ The PowerShell Gallery Team", root["body"]["text"]);
     The PowerShell Gallery Team</p>
 </body>
 </html>", root["body"]["html"]);
-
+            }
+            
         }
 
         
