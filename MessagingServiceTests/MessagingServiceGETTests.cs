@@ -8,7 +8,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace MessagingServiceTests
+namespace NuGet.Services.Messaging.Tests
 {
     
 

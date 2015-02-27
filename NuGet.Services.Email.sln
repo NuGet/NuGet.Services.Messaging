@@ -24,9 +24,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{1AFBAB
 		.nuget\packages.config = .nuget\packages.config
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessagingServiceTests", "MessagingServiceTests\MessagingServiceTests.csproj", "{A4F5F749-94D1-411A-B939-9BCDB3D64926}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0E68B60A-46EF-43EF-B453-1994AEB453C9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuGet.Services.Messaging.Tests", "MessagingServiceTests\NuGet.Services.Messaging.Tests.csproj", "{A4F5F749-94D1-411A-B939-9BCDB3D64926}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
