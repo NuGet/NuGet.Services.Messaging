@@ -1,0 +1,15 @@
+{
+	"AzureStorage": {
+		"SubscriptionName": "",
+		"SubscriptionId": "",
+		"StorageAccountName": "",
+		"StorageKey": "",
+		"ContainerName": ""		
+	},
+	"SMTP": {
+		"Server": "",
+		"Username": "",
+		"Password": ""
+	}
+	
+}

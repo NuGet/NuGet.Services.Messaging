@@ -2,6 +2,84 @@
     $configurationFilename=".\SenderJob_Config.json"
 )
 
+
+# HELPER METHODS
+
+Function GetMessage
+{
+    param(
+        $containerName,
+        $destContext
+    )
+    
+    $blobsList = Get-AzureStorageBlob -Container $containerName -Context $destContext
+
+    If($blobsList.Count -eq 0)
+    {
+        return $null
+    }
+
+    $blob = $blobsList | Select-Object -First 1
+    $guid = $blob.Name
+
+    # save blob to file
+    Get-AzureStorageBlobContent -Container $containerName -Blob $guid -Context $destContext -Destination .\blobs | Out-Null
+
+    $message = Get-Content ".\blobs\$guid"
+
+    return "$message","$guid"
+}
+
+Function CreateSendEmail
+{
+    param(
+        $guid,
+        $smtpClient
+    )
+
+    
+
+    $jsonMessage = ConvertFrom-Json "$message"
+
+    $to = $jsonMessage.to
+    $from = $jsonMessage.from
+    $subject = $jsonMessage.subject
+    $bodyText = $jsonMessage.body.text
+    $bodyHTML = $jsonMessage.body.html
+
+    $msg = New-Object System.Net.Mail.MailMessage
+    $msg.To.Add($to)
+    $msg.From = $from
+    $msg.Subject = $subject
+
+    $plainView = New-Object System.Net.Mail.AlternateView($bodyText, "text/plain")
+    $msg.AlternateViews.Add($plainView)
+
+    $htmlView = New-Object System.Net.Mail.AlternateView($bodyHTML, "text/html")
+    $msg.AlternateViews.Add($htmlView)
+
+    #$smtpClient.Send($msg)
+
+}
+
+Function DeleteMessage
+{
+    param(
+        $containerName,
+        $blobID,
+        $destContext
+    )
+
+    Remove-Item ".\blobs\$blobID"
+    Remove-AzureStorageBlob -Container $containerName -Blob $blobID -Context $destContext
+    
+}
+
+
+
+
+
+
 # get config values
 $configContent = Get-Content $configurationFilename
 $configJson = ConvertFrom-Json "$configContent"
@@ -82,6 +160,8 @@ else
 
 
 
+
+
 Import-Module Azure
 
 $destContext = New-AzureStorageContext -StorageAccountName $storageAccount -StorageAccountKey $storageKey
@@ -91,7 +171,7 @@ $smtpClient.Credentials = New-Object System.Net.NetworkCredential($smtpUsername,
 
 
 
-while(true)
+while($true)
 {
     
     $message,$blobID = GetMessage $containerName $destContext
@@ -99,7 +179,6 @@ while(true)
     if ($message -ne $null)
     {
         CreateSendEmail $message $smtpClient
-
         DeleteMessage $containerName $blobID $destContext
     }
     else 
@@ -108,75 +187,3 @@ while(true)
     }
 }
 
-
-
-
-
-# HELPER METHODS
-
-Function GetMessage
-{
-    param(
-        $containerName,
-        $destContext
-    )
-    
-    $blobsList = Get-AzureStorageBlob -Container $containerName -Context $destContext
-
-    If($blobsList.Count -eq 0)
-    {
-        return $null
-    }
-
-    $blob = $blobsList | Select-Object -First 1
-    $guid = $blob.Name
-
-    # save blob to file
-    Get-AzureStorageBlobContent -Container 'messages' -Blob $guid -Context $destContext -Destination .\blobs
-
-    $message = Get-Content ".\blobs\$guid"
-
-    return $message,$guid
-}
-
-Function CreateSendEmail
-{
-    param(
-        $message,
-        $smtpClient
-    )
-
-    $jsonMessage = ConvertFrom-Json "$message"
-
-    $to = $jsonMessage.to
-    $from = $jsonMessage.from
-    $subject = $jsonMessage.subject
-    $bodyText = $jsonMessage.body.text
-    $bodyHTML = $jsonMessage.body.html
-
-    $msg = New-Object System.Net.Mail.MailMessage
-    $msg.To.Add($to)
-    $msg.From = $from
-    $msg.Subject = $subject
-
-    $plainView = New-Object System.Net.Mail.AlternateView($bodyText, "text/plain")
-    $msg.AlternateViews.Add($plainView)
-
-    $htmlView = New-Object System.Net.Mail.AlternateView($bodyHTML, "text/html")
-    $msg.AlternateViews.Add($htmlView)
-
-    $smtpClient.Send($msg)
-
-}
-
-Function DeleteMessage
-{
-    param(
-        $containerName,
-        $blobID,
-        $destContext
-    )
-
-    Remove-AzureStorageBlob -Container $containerName -Blob $blobID -Context $destContext
-    Remove-Item ".\blobs\$blobID"
-}
