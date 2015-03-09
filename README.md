@@ -1,11 +1,12 @@
-NuGet.Services.Messaging
-========================
+# NuGet.Services.Messaging
 
-NuGet Messaging Service.
+This repo contains NuGet's Messaging Service, which is used by several other services like [NuGet.Gallery](https://github.com/NuGet/NuGet.Gallery).
 
+## Service methods
 
+Let's go over the exposed service methods.
 
-## POST Service Calls
+### POST service methods
     
     ##### Required Data:  
     Please provide the required data in JSON format in the request body.
@@ -95,14 +96,7 @@ NuGet Messaging Service.
             | brand:            | string (options:  NuGet)                      |
 
 
-
-
-
-
-
-## GET Service Calls
-
-
+### GET service methods
     
     ##### Returned Data:
        Returned data is in JSON format. *Entity* will be replaced with entity name associated with the provided brand.
@@ -124,4 +118,6 @@ NuGet Messaging Service.
             "The *entity* has a bug/failed to install"
             "Other"
 
+## Feedback
 
+Check out the [contributing](http://docs.nuget.org/contribute) page to see the best places to log issues and start discussions. The [NuGet Home](https://github.com/NuGet/Home) repo provides an overview of the different NuGet projects available.
