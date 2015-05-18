@@ -1,0 +1,10 @@
+{
+	"packageId": "SomeTestPackage",
+	"packageVersion": "1.0.0",
+	"copyMe": true,
+	"reason": "This package contains sensitive data.",
+	"message": "Please remove this package right away, it has all my secrets in it!",
+	"fromUsername": "rebro-1",
+    "brand": "PowerShellGallery",
+    "extraParameter":  "Oh no!  I should not be here."
+}

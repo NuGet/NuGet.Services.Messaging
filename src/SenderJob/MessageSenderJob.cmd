@@ -1,0 +1,1 @@
+powershell -NoProfile -ExecutionPolicy Unrestricted -File ".\MessageSenderJob.ps1 .\SenderJob_Config.json" >> messagesenderjob.log 2>> messagesenderjob.err

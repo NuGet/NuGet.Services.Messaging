@@ -1,0 +1,8 @@
+{
+	"packageId": "SomeTestPackage",
+	"packageVersion": "1.0.0",
+	"copyMe": true,
+	"message": "Hello owners, I would like to be an owner too.  Please add me!",
+	"fromUsername": "rebro-1",
+	"brand": "PowerShellGallery"
+}
